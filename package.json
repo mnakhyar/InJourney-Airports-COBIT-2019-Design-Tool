@@ -4,9 +4,9 @@
   "version": "1.0.0",
   "type": "module",
   "scripts": {
-    "dev": "vite",
+    "dev": "vite --base /",
     "build": "vite build",
-    "preview": "vite preview"
+    "preview": "vite preview --base /InJourney-Airports-COBIT-2019-Design-Tool/"
   },
   "dependencies": {
     "react": "^18.3.1",
