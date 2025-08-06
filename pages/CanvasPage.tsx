@@ -250,10 +250,20 @@ const CanvasPage: React.FC<{ allInputs: UserInputs }> = ({ allInputs }) => {
                     value = 2; // Default capability level
                 }
                 
-                // Always add to summary, even if value is 0
+                // Only add to summary if value is valid and user has input (for user-input columns)
                 if (typeof value === 'number' && !isNaN(value)) {
-                    summaries[col].sum += value;
-                    summaries[col].count += 1;
+                    if (col === 'initialQuickScoring' || col.startsWith('yearlyScore_')) {
+                        // For user-input columns, only count if user has actually input a value
+                        const userInputValue = inputsForObjective[col as keyof typeof inputsForObjective] as number | undefined;
+                        if (userInputValue !== undefined && userInputValue !== null) {
+                            summaries[col].sum += value;
+                            summaries[col].count += 1;
+                        }
+                    } else {
+                        // For auto-calculated columns, always count
+                        summaries[col].sum += value;
+                        summaries[col].count += 1;
+                    }
                 }
             });
         });
