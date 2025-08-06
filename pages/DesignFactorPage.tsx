@@ -81,15 +81,60 @@ const DesignFactorPage: React.FC<DesignFactorPageProps> = ({ allInputs, onInputC
 
     const results = useMemo(() => {
         if (!factorId || !allInputs) return [];
-        return calculateScoresForSingleFactor(allInputs, factorId);
+        
+        // Ensure all inputs have baseline values for missing data
+        const effectiveInputs = { ...allInputs };
+        const factor = DESIGN_FACTORS.find(df => df.id === factorId);
+        if (factor) {
+            const items = factor.archetypes || factor.categories || factor.riskScenarios || factor.issues || factor.options || [];
+            const baselines = DESIGN_FACTOR_BASELINES[factor.id];
+            
+            if (!effectiveInputs[factor.id]) {
+                effectiveInputs[factor.id] = {};
+            }
+            
+            items.forEach(item => {
+                if (effectiveInputs[factor.id][item.id] === undefined && baselines) {
+                    if (factor.type === 'percentage') {
+                        effectiveInputs[factor.id][item.id] = baselines[item.id] || 0;
+                    } else if (factor.type === 'rating-1-3') {
+                        effectiveInputs[factor.id][item.id] = baselines[item.id] || 2;
+                    } else if (factor.type === 'rating-2d') {
+                        effectiveInputs[factor.id][item.id] = { impact: 3, likelihood: 3 };
+                    } else {
+                        effectiveInputs[factor.id][item.id] = baselines[item.id] || 3;
+                    }
+                }
+            });
+        }
+        
+        return calculateScoresForSingleFactor(effectiveInputs, factorId);
     }, [allInputs, factorId]);
 
     const summaryStats = useMemo(() => {
-        if (!factor || !factorInputs) return null;
+        if (!factor) return null;
         const baselines = DESIGN_FACTOR_BASELINES[factor.id];
         if (!baselines) return null;
         
-        return calculateSummaryStatistics(factor, factorInputs, baselines);
+        // Use baseline values for missing inputs to ensure default scores are shown
+        const effectiveInputs = { ...factorInputs };
+        const items = factor.archetypes || factor.categories || factor.riskScenarios || factor.issues || factor.options || [];
+        
+        items.forEach(item => {
+            if (effectiveInputs[item.id] === undefined) {
+                if (factor.type === 'percentage') {
+                    effectiveInputs[item.id] = baselines[item.id] || 0;
+                } else if (factor.type === 'rating-1-3') {
+                    effectiveInputs[item.id] = baselines[item.id] || 2;
+                } else if (factor.type === 'rating-2d') {
+                    effectiveInputs[item.id] = { impact: 3, likelihood: 3 };
+                } else {
+                    effectiveInputs[item.id] = baselines[item.id] || 3;
+                }
+            }
+        });
+        
+        return calculateSummaryStatistics(factor, effectiveInputs, baselines);
     }, [factor, factorInputs]);
 
     if (!factor) {

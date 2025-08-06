@@ -15,11 +15,14 @@ export const calculateDf9Scores = (inputs: UserInputs, factorId: string): ScoreR
     const factor = DESIGN_FACTORS.find(f => f.id === factorId);
     if (!factor || !factor.options) return [];
 
-    const factorInputs = inputs[factor.id] as { [key: string]: number };
-    if (!factorInputs) return [];
+    const factorInputs = (inputs[factor.id] || {}) as { [key: string]: number };
+    
+    // Use baseline values if inputs are empty
+    const df9Baselines = { agile: 15, devops: 10, traditional: 75 };
+    const effectiveInputs = Object.keys(factorInputs).length === 0 ? df9Baselines : factorInputs;
 
     // Normalize user inputs by their actual total sum.
-    const totalUserInput = Object.values(factorInputs).reduce((sum, val) => sum + (val || 0), 0);
+    const totalUserInput = Object.values(effectiveInputs).reduce((sum, val) => sum + (val || 0), 0);
 
     return GOVERNANCE_OBJECTIVES.map(obj => {
         const objectiveWeights = DF9_MAPPING[obj.id];
@@ -28,7 +31,7 @@ export const calculateDf9Scores = (inputs: UserInputs, factorId: string): ScoreR
         if (objectiveWeights) {
             // Calculate the raw score based on the user's normalized percentage inputs
             rawScore = factor.options!.reduce((acc, option) => {
-                const inputValue = factorInputs[option.id] || 0;
+                const inputValue = effectiveInputs[option.id] || 0;
                 
                 // Normalize the user's input value against their total input sum.
                 const normalizedValue = totalUserInput > 0 ? inputValue / totalUserInput : 0;

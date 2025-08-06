@@ -1,6 +1,6 @@
 import { UserInputs, ScoreResult } from '../../types';
 import { GOVERNANCE_OBJECTIVES, DESIGN_FACTOR_BASELINES, OBJECTIVE_BASELINES } from '../../constants/cobitData';
-import { DF1_MAPPING } from '../../constants/mappings/df1Mapping';
+import { weightService } from '../weightService';
 
 /**
  * Calculates the three core values for a single objective for Design Factor 1.
@@ -21,11 +21,11 @@ const calculateDf1Values = (
   const baselineRatio = totalUserInput > 0 ? totalBaseline / totalUserInput : 0;
 
   // 2. Calculate weighted_input_score
-  const weights = DF1_MAPPING[objectiveId];
+  const weights = weightService.getFactorWeights('df1');
   if (!weights) return { weightedScore: 0, baselineScore: 0, relativeScore: 0 };
 
   const weightedInputScore = Object.keys(df1Inputs).reduce((sum, key) => {
-    const weight = weights[key] || 0;
+    const weight = weights[key]?.[objectiveId] || 0;
     const inputValue = df1Inputs[key] || 0;
     return sum + (inputValue * weight);
   }, 0);
@@ -58,9 +58,15 @@ const calculateDf1Values = (
  */
 export const calculateDf1Scores = (inputs: UserInputs): ScoreResult[] => {
     const factorInputs = (inputs['df1'] || {}) as { [key: string]: number };
+    
+    // Use baseline values if inputs are empty
+    const df1Baselines = DESIGN_FACTOR_BASELINES.df1;
+    const effectiveInputs = Object.keys(df1Baselines).length > 0 && Object.keys(factorInputs).length === 0 
+      ? df1Baselines 
+      : factorInputs;
 
     return GOVERNANCE_OBJECTIVES.map(obj => {
-        const { weightedScore, baselineScore, relativeScore } = calculateDf1Values(factorInputs, obj.id);
+        const { weightedScore, baselineScore, relativeScore } = calculateDf1Values(effectiveInputs, obj.id);
         
         return {
             objectiveId: obj.id,

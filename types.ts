@@ -43,3 +43,46 @@ export interface ScoreResult {
   capabilityLevel: number;
   suggestedCapabilityLevel?: number;
 }
+
+// Database-related types
+export interface SavedProject {
+  id: string;
+  name: string;
+  description?: string;
+  inputs: UserInputs;
+  createdAt: string;
+  updatedAt: string;
+  version: string;
+}
+
+export interface WeightMapping {
+  designFactorId: string;
+  sourceId: string;
+  targetObjectiveId: string;
+  weight: number;
+}
+
+export interface WeightConfiguration {
+  id: string;
+  name: string;
+  description?: string;
+  mappings: { [key: string]: { [key: string]: { [key: string]: number } } };
+  isActive: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface ApiResponse<T> {
+  success: boolean;
+  data?: T;
+  error?: string;
+  message?: string;
+}
+
+export interface SaveLoadDialogProps {
+  isOpen: boolean;
+  onClose: () => void;
+  currentInputs: UserInputs;
+  onLoadProject: (inputs: UserInputs, projectId: string, projectName: string) => void;
+  mode: 'save' | 'load';
+}

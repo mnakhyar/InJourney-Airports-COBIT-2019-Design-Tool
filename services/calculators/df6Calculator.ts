@@ -15,11 +15,14 @@ export const calculateDf6Scores = (inputs: UserInputs, factorId: string): ScoreR
     const factor = DESIGN_FACTORS.find(f => f.id === factorId);
     if (!factor || !factor.options) return [];
 
-    const factorInputs = inputs[factor.id] as { [key: string]: number };
-    if (!factorInputs) return [];
+    const factorInputs = (inputs[factor.id] || {}) as { [key: string]: number };
+    
+    // Use baseline values if inputs are empty
+    const df6Baselines = { df6_high: 0, df6_normal: 100, df6_low: 0 };
+    const effectiveInputs = Object.keys(factorInputs).length === 0 ? df6Baselines : factorInputs;
     
     // Normalize user inputs by their actual total sum.
-    const totalUserInput = Object.values(factorInputs).reduce((sum, val) => sum + (val || 0), 0);
+    const totalUserInput = Object.values(effectiveInputs).reduce((sum, val) => sum + (val || 0), 0);
 
     return GOVERNANCE_OBJECTIVES.map(obj => {
         const objectiveWeights = DF6_MAPPING[obj.id];
@@ -28,7 +31,7 @@ export const calculateDf6Scores = (inputs: UserInputs, factorId: string): ScoreR
         if (objectiveWeights) {
             // Calculate the raw score based on the user's normalized percentage inputs
             rawScore = factor.options!.reduce((acc, option) => {
-                const inputValue = factorInputs[option.id] || 0;
+                const inputValue = effectiveInputs[option.id] || 0;
                 
                 // Normalize the user's input value against their total input sum.
                 const normalizedValue = totalUserInput > 0 ? inputValue / totalUserInput : 0;

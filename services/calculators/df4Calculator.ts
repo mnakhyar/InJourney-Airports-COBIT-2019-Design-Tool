@@ -1,6 +1,6 @@
 import { UserInputs, ScoreResult } from '../../types';
 import { GOVERNANCE_OBJECTIVES, DESIGN_FACTORS, DESIGN_FACTOR_BASELINES, OBJECTIVE_BASELINES } from '../../constants/cobitData';
-import { DF4_MAPPING } from '../../constants/mappings/df4Mapping';
+import { weightService } from '../weightService';
 
 
 /**
@@ -29,15 +29,13 @@ const calculateDf4Values = (
   const baselineRatio = totalUserInput > 0 ? totalBaseline / totalUserInput : 0;
 
   // 2. Calculate weighted_input_score
-  const weights = DF4_MAPPING;
+  const weights = weightService.getFactorWeights('df4');
   let weightedInputScore = 0;
 
   factor.issues.forEach(issue => {
-    const issueWeights = weights[issue.id];
-    if(issueWeights && issueWeights[objectiveId]) {
-        const rating = df4Inputs[issue.id] || 2; // Default to 2 for DF4
-        weightedInputScore += rating * issueWeights[objectiveId];
-    }
+    const weight = weights[issue.id]?.[objectiveId] || 0;
+    const rating = df4Inputs[issue.id] || 2; // Default to 2 for DF4
+    weightedInputScore += rating * weight;
   });
 
   // 3. Get objective_baseline

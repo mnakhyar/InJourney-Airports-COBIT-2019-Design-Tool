@@ -1,6 +1,7 @@
 
 import React from 'react';
 import { DesignFactor } from '../types';
+import { DESIGN_FACTOR_BASELINES } from '../constants/cobitData';
 import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, Legend, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar, PieChart, Pie, Cell, LabelList } from 'recharts';
 
 interface InputVisualizerProps {
@@ -13,6 +14,98 @@ const COLORS = ['#0D47A1', '#1976D2', '#FFC107', '#4CAF50', '#F44336', '#9C27B0'
 const InputVisualizer: React.FC<InputVisualizerProps> = ({ factor, inputs }) => {
     
     const allItems = factor.archetypes || factor.categories || factor.riskScenarios || factor.issues || factor.options || [];
+    
+    // Get baseline values for the factor
+    const baselineValues = DESIGN_FACTOR_BASELINES[factor.id] || {};
+    
+    // Create data with baseline values as fallback
+    const createDataWithBaseline = () => {
+        const data: any[] = [];
+        
+        allItems.forEach(item => {
+            let value: number;
+            
+            if (inputs[item.id] !== undefined) {
+                // Use user input if available
+                if (typeof inputs[item.id] === 'number') {
+                    value = inputs[item.id] as number;
+                } else if (typeof inputs[item.id] === 'object' && inputs[item.id] !== null) {
+                    // For 2D ratings (impact * likelihood)
+                    const twoDValue = inputs[item.id] as { impact: number, likelihood: number };
+                    value = twoDValue.impact * twoDValue.likelihood;
+                } else {
+                    value = 0;
+                }
+            } else {
+                // Use baseline value as fallback
+                if (factor.id === 'df4') {
+                    value = baselineValues.default || 2;
+                } else if (factor.id === 'df3') {
+                    value = baselineValues[item.id] || 9;
+                } else {
+                    value = baselineValues[item.id] || 3;
+                }
+            }
+            
+            data.push({
+                name: getItemName(item.id),
+                value: value,
+                subject: getItemName(item.id)
+            });
+        });
+        
+        return data;
+    };
+    
+    // Create 2D data for risk profile
+    const create2DDataWithBaseline = () => {
+        const data: any[] = [];
+        
+        allItems.forEach(item => {
+            let impact: number, likelihood: number;
+            
+            if (inputs[item.id] !== undefined && typeof inputs[item.id] === 'object' && inputs[item.id] !== null) {
+                const twoDValue = inputs[item.id] as { impact: number, likelihood: number };
+                impact = twoDValue.impact;
+                likelihood = twoDValue.likelihood;
+            } else {
+                // Use baseline values (default to 3 for both)
+                impact = 3;
+                likelihood = 3;
+            }
+            
+            data.push({
+                name: getItemName(item.id),
+                Impact: impact,
+                Likelihood: likelihood
+            });
+        });
+        
+        return data;
+    };
+    
+    // Create percentage data for distribution factors
+    const createPercentageDataWithBaseline = () => {
+        const data: any[] = [];
+        
+        allItems.forEach(item => {
+            let value: number;
+            
+            if (inputs[item.id] !== undefined) {
+                value = inputs[item.id] as number;
+            } else {
+                // Use baseline percentage values
+                value = baselineValues[item.id] || 0;
+            }
+            
+            data.push({
+                name: getItemName(item.id),
+                value: value
+            });
+        });
+        
+        return data;
+    };
 
     const getItemName = (id: string) => {
         const item = allItems.find(i => i.id === id);
@@ -104,7 +197,7 @@ const InputVisualizer: React.FC<InputVisualizerProps> = ({ factor, inputs }) => 
     switch (factor.id) {
         case 'df1':
         case 'df2': {
-             const data = Object.entries(inputs).map(([id, value]) => ({ name: getItemName(id), value: value as number, subject: getItemName(id) }));
+             const data = createDataWithBaseline();
              return (
                 <div className="w-full">
                     <h4 className="text-center font-semibold text-gray-700 mb-2">Input Ratings (Bar)</h4>
@@ -115,10 +208,7 @@ const InputVisualizer: React.FC<InputVisualizerProps> = ({ factor, inputs }) => 
              );
         }
         case 'df3': {
-            const data = Object.entries(inputs).map(([id, val]) => {
-                const value = val as { impact: number, likelihood: number };
-                return { name: getItemName(id), Impact: value.impact, Likelihood: value.likelihood };
-            });
+            const data = create2DDataWithBaseline();
             return (
                  <div className="w-full">
                     <h4 className="text-center font-semibold text-gray-700 mb-2">Risk Profile Inputs</h4>
@@ -129,7 +219,7 @@ const InputVisualizer: React.FC<InputVisualizerProps> = ({ factor, inputs }) => 
          case 'df4':
          case 'df7': {
             const domainMax = factor.id === 'df4' ? 3 : 5;
-            const data = Object.entries(inputs).map(([id, value]) => ({ name: getItemName(id), value: value as number }));
+            const data = createDataWithBaseline();
             return (
                  <div className="w-full">
                     <h4 className="text-center font-semibold text-gray-700 mb-2">Input Ratings</h4>
@@ -142,7 +232,7 @@ const InputVisualizer: React.FC<InputVisualizerProps> = ({ factor, inputs }) => 
         case 'df8':
         case 'df9':
         case 'df10': {
-             const data = Object.entries(inputs).map(([id, value]) => ({ name: getItemName(id), value: value as number }));
+             const data = createPercentageDataWithBaseline();
              return (
                  <div className="w-full">
                     <h4 className="text-center font-semibold text-gray-700 mb-2">Input Distribution</h4>
