@@ -189,30 +189,38 @@ export const calculateSummaryStep2 = (inputs: UserInputs, weights: { [key: strin
     }
     
     // Step 1: Determine the Normalizer (Nilai_Pembagi)
+    // F50: Max([nilai pre initial scope])
     const maxVal = Math.max(...allPreInitialValues);
+    // F51: -Min([nilai pre initial scope semua objective])
     const minVal = Math.min(...allPreInitialValues);
-    const normalizer = Math.max(0, maxVal, Math.abs(minVal));
+    const normalizer = Math.max(maxVal, Math.abs(minVal));
 
     // Step 2-5: Calculate final score for each objective
     return preInitialScopeResults.map(result => {
-        const preInitialValue = result.finalScore; // This is the PreInitialScope_Value
+        const preInitialValue = result.finalScore; // This is F6: pre initial scope
         let finalScore = 0;
 
         try {
-            // Step 5: Handle errors (division by zero)
+            // IFERROR(IF(F6>=0,MROUND(TRUNC(100*SUMPRODUCT(B$5:E$5,B6:E6)/MAX(F$50:F$51)),5),MROUND(TRUNC(100*SUMPRODUCT(B$5:E$5,B6:E6)/MAX(F$50:F$51)),-5)),0)
             if (normalizer !== 0) {
-                // Step 2: Calculate Normalized Score
+                // Calculate SUMPRODUCT(B$5:E$5,B6:E6) / MAX(F$50:F$51)
+                // This is already done in calculateAggregatedScores, so we use preInitialValue
                 const normalizedScore = (preInitialValue / normalizer) * 100;
                 
-                // Step 3: Truncate
+                // TRUNC the result
                 const truncatedScore = Math.trunc(normalizedScore);
                 
-                // Step 4: Conditional Rounding to nearest 5
-                // This formula works for both positive and negative values.
-                finalScore = Math.round(truncatedScore / 5) * 5;
+                // MROUND with conditional sign
+                if (preInitialValue >= 0) {
+                    // MROUND(truncatedScore, 5) - round to nearest 5
+                    finalScore = Math.round(truncatedScore / 5) * 5;
+                } else {
+                    // MROUND(truncatedScore, -5) - round to nearest -5
+                    finalScore = Math.round(truncatedScore / 5) * 5;
+                }
             }
         } catch (error) {
-            // Fallback error handling
+            // Fallback error handling (IFERROR)
             console.error(`Error calculating initial scope for ${result.objectiveId}:`, error);
             finalScore = 0;
         }
