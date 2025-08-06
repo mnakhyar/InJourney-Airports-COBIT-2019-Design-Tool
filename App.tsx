@@ -118,10 +118,7 @@ function App() {
     }
   }, [userInputs, hasCurrentProject, currentProjectId]);
 
-  // Initialize weight service
-  useEffect(() => {
-    weightService.initialize();
-  }, []);
+
 
   const handleLoadProject = (inputs: UserInputs, projectId: string, projectName: string) => {
     setUserInputs(inputs);
