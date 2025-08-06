@@ -214,12 +214,14 @@ function App() {
                         handleSaveProject();
                         localStorage.removeItem('cobit_current_project');
                         setHasCurrentProject(false);
+                        navigate('/');
                       },
                       'warning'
                     );
                   } else {
                     localStorage.removeItem('cobit_current_project');
                     setHasCurrentProject(false);
+                    navigate('/');
                   }
                 }} 
                 variant="secondary"
