@@ -89,7 +89,7 @@ const WelcomePage: React.FC = () => {
     localStorage.setItem('cobit_current_project', project.id);
     setShowNewProjectDialog(false);
     // Force page reload to trigger App.tsx useEffect
-    window.location.href = '/';
+    window.location.href = window.location.pathname;
   };
 
   const handleLoadProject = (project: SavedProject) => {
