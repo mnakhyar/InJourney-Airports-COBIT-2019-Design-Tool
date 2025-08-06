@@ -620,7 +620,7 @@ const WeightManagementPage: React.FC = () => {
                             <td key={obj.id} className="border border-gray-300 px-2 py-1">
                               <input
                                 type="number"
-                                step="0.1"
+                                step="any"
                                 min="0"
                                 max="10"
                                 value={getWeight(selectedFactor, item.id, obj.id)}
