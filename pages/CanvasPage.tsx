@@ -404,12 +404,21 @@ const CanvasPage: React.FC<{ allInputs: UserInputs }> = ({ allInputs }) => {
                             <tfoot className="bg-gray-200 font-bold text-gray-700">
                                 <tr>
                                     <th scope="row" className="sticky left-0 p-2 text-left align-middle w-96 bg-gray-200 border-r border-t border-gray-300 z-30">Score</th>
-                                    <td colSpan={step2Cols.length + step3Cols.length + step4Cols.length} className="border-t border-gray-300"></td>
+                                    <td colSpan={step2Cols.length + step3Cols.length} className="border-t border-gray-300"></td>
+                                    {/* Step 4 columns summary */}
+                                    <td className="p-2 whitespace-nowrap text-center bg-yellow-200 border-r border-t border-gray-300">-</td>
+                                    <td className="p-2 whitespace-nowrap text-center bg-yellow-200 border-r border-t border-gray-300">-</td>
+                                    <td className="p-2 whitespace-nowrap text-center bg-yellow-200 border-r border-t border-gray-300">-</td>
+                                    <td className="p-2 whitespace-nowrap text-center bg-yellow-200 border-r border-t border-gray-300">
+                                        {yearlyTargetSummaries['suggestedCapability']?.average > 0 ? yearlyTargetSummaries['suggestedCapability'].average.toFixed(2) : '-'}
+                                    </td>
+                                    <td className="p-2 whitespace-nowrap text-center bg-yellow-200 border-r border-t border-gray-300">
+                                        {yearlyTargetSummaries['agreedCapability']?.average > 0 ? yearlyTargetSummaries['agreedCapability'].average.toFixed(2) : '-'}
+                                    </td>
+                                    <td className="p-2 whitespace-nowrap text-center bg-yellow-200 border-r border-t border-gray-300">-</td>
+                                    {/* Step 5 columns summary */}
                                     {step5Cols.map(col => {
-                                        // Only show summary for specific columns
                                         const summaryColumns = [
-                                            'suggestedCapability',
-                                            'agreedCapability', 
                                             'initialQuickScoring',
                                             'agreedFor5Years',
                                             'yearlyScore_1', // 2025
@@ -436,12 +445,21 @@ const CanvasPage: React.FC<{ allInputs: UserInputs }> = ({ allInputs }) => {
                                 </tr>
                                 <tr>
                                     <th scope="row" className="sticky left-0 p-2 text-left align-middle w-96 bg-gray-200 border-r border-gray-300 z-30">Gamo Num</th>
-                                    <td colSpan={step2Cols.length + step3Cols.length + step4Cols.length}></td>
+                                    <td colSpan={step2Cols.length + step3Cols.length}></td>
+                                    {/* Step 4 columns summary */}
+                                    <td className="p-2 whitespace-nowrap text-center bg-yellow-200 border-r border-gray-200">-</td>
+                                    <td className="p-2 whitespace-nowrap text-center bg-yellow-200 border-r border-gray-200">-</td>
+                                    <td className="p-2 whitespace-nowrap text-center bg-yellow-200 border-r border-gray-200">-</td>
+                                    <td className="p-2 whitespace-nowrap text-center bg-yellow-200 border-r border-gray-200">
+                                        {yearlyTargetSummaries['suggestedCapability']?.count > 0 ? yearlyTargetSummaries['suggestedCapability'].count : '-'}
+                                    </td>
+                                    <td className="p-2 whitespace-nowrap text-center bg-yellow-200 border-r border-gray-200">
+                                        {yearlyTargetSummaries['agreedCapability']?.count > 0 ? yearlyTargetSummaries['agreedCapability'].count : '-'}
+                                    </td>
+                                    <td className="p-2 whitespace-nowrap text-center bg-yellow-200 border-r border-gray-200">-</td>
+                                    {/* Step 5 columns summary */}
                                     {step5Cols.map(col => {
-                                        // Only show summary for specific columns
                                         const summaryColumns = [
-                                            'suggestedCapability',
-                                            'agreedCapability', 
                                             'initialQuickScoring',
                                             'agreedFor5Years',
                                             'yearlyScore_1', // 2025
