@@ -224,16 +224,9 @@ const CanvasPage: React.FC<{ allInputs: UserInputs }> = ({ allInputs }) => {
                         const suggestedCapability = calculateSuggestedCapabilityLevel(concludedScope);
                         value = inputsForObjective.agreedCapability ?? suggestedCapability;
                     } else if (col === 'initialQuickScoring') {
-                        // Use suggested capability as default for initial scoring
-                        let refinedScore = 0;
-                        if (hasAllInputs) {
-                            const df4Result = calculateScoresForSingleFactor(allInputs, 'df4').find(r => r.objectiveId === obj.id);
-                            refinedScore = df4Result?.finalScore || 0;
-                        }
-                        const adjustment = inputsForObjective.adjustment ?? 0;
-                        const concludedScope = refinedScore + adjustment;
-                        const suggestedCapability = calculateSuggestedCapabilityLevel(concludedScope);
-                        value = inputsForObjective.initialQuickScoring ?? suggestedCapability;
+                        // Only calculate if user has input a value
+                        const initialValue = inputsForObjective.initialQuickScoring;
+                        value = initialValue !== undefined && initialValue !== null ? initialValue : 0;
                     } else if (col === 'agreedFor5Years') {
                         // Use agreed capability value for agreed 5 years
                         let refinedScore = 0;
@@ -247,17 +240,9 @@ const CanvasPage: React.FC<{ allInputs: UserInputs }> = ({ allInputs }) => {
                         const agreedCapability = inputsForObjective.agreedCapability ?? suggestedCapability;
                         value = agreedCapability;
                     } else if (col.startsWith('yearlyScore_')) {
-                        // Use agreed capability as default for yearly scores
-                        let refinedScore = 0;
-                        if (hasAllInputs) {
-                            const df4Result = calculateScoresForSingleFactor(allInputs, 'df4').find(r => r.objectiveId === obj.id);
-                            refinedScore = df4Result?.finalScore || 0;
-                        }
-                        const adjustment = inputsForObjective.adjustment ?? 0;
-                        const concludedScope = refinedScore + adjustment;
-                        const suggestedCapability = calculateSuggestedCapabilityLevel(concludedScope);
-                        const agreedCapability = inputsForObjective.agreedCapability ?? suggestedCapability;
-                        value = inputsForObjective[col as keyof typeof inputsForObjective] as number | undefined ?? agreedCapability;
+                        // Only calculate if user has input a value
+                        const yearlyValue = inputsForObjective[col as keyof typeof inputsForObjective] as number | undefined;
+                        value = yearlyValue !== undefined && yearlyValue !== null ? yearlyValue : 0;
                     }
                 } catch (error) {
                     // If calculation fails, use default value
@@ -431,6 +416,13 @@ const CanvasPage: React.FC<{ allInputs: UserInputs }> = ({ allInputs }) => {
                                                 if (col.id === 'agreedFor5Years' || col.id === 'yearlyScore_5') {
                                                     displayValue = agreedCapabilityValue;
                                                     isReadOnly = true;
+                                                } else if (col.id === 'yearlyScore_1') {
+                                                    // 2025 follows Initial Score
+                                                    const initialScore = canvasInputs[row.id]?.initialQuickScoring;
+                                                    if (initialScore !== undefined && initialScore !== null) {
+                                                        displayValue = initialScore;
+                                                        isReadOnly = true;
+                                                    }
                                                 }
                                                 
                                                 return (
