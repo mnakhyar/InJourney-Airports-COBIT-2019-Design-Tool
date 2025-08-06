@@ -192,34 +192,55 @@ const CanvasPage: React.FC<{ allInputs: UserInputs }> = ({ allInputs }) => {
         });
 
         GOVERNANCE_OBJECTIVES.forEach(obj => {
-            const inputsForObjective = canvasInputs[obj.id];
-            if (inputsForObjective) {
-                summaryColumns.forEach(col => {
-                    let value: number | undefined;
-                    
-                    if (col === 'suggestedCapability') {
-                        // Calculate suggested capability from concluded scope
-                        const refinedScore = allInputs && calculateScoresForSingleFactor(allInputs, 'df4').find(r => r.objectiveId === obj.id)?.finalScore || 0;
-                        const adjustment = inputsForObjective.adjustment ?? 0;
-                        const concludedScope = refinedScore + adjustment;
-                        value = calculateSuggestedCapabilityLevel(concludedScope);
-                    } else if (col === 'agreedCapability') {
-                        value = inputsForObjective.agreedCapability;
-                    } else if (col === 'initialQuickScoring') {
-                        value = inputsForObjective.initialQuickScoring;
-                    } else if (col === 'agreedFor5Years') {
-                        // Use agreed capability value for agreed 5 years
-                        value = inputsForObjective.agreedCapability;
-                    } else if (col.startsWith('yearlyScore_')) {
-                        value = inputsForObjective[col as keyof typeof inputsForObjective] as number | undefined;
-                    }
-                    
-                    if (typeof value === 'number' && !isNaN(value)) {
-                        summaries[col].sum += value;
-                        summaries[col].count += 1;
-                    }
-                });
-            }
+            // Always calculate summary, even if no user inputs yet
+            const inputsForObjective = canvasInputs[obj.id] || {};
+            
+            summaryColumns.forEach(col => {
+                let value: number | undefined;
+                
+                if (col === 'suggestedCapability') {
+                    // Calculate suggested capability from concluded scope
+                    const refinedScore = allInputs && calculateScoresForSingleFactor(allInputs, 'df4').find(r => r.objectiveId === obj.id)?.finalScore || 0;
+                    const adjustment = inputsForObjective.adjustment ?? 0;
+                    const concludedScope = refinedScore + adjustment;
+                    value = calculateSuggestedCapabilityLevel(concludedScope);
+                } else if (col === 'agreedCapability') {
+                    // Use suggested capability as default if no user input
+                    const refinedScore = allInputs && calculateScoresForSingleFactor(allInputs, 'df4').find(r => r.objectiveId === obj.id)?.finalScore || 0;
+                    const adjustment = inputsForObjective.adjustment ?? 0;
+                    const concludedScope = refinedScore + adjustment;
+                    const suggestedCapability = calculateSuggestedCapabilityLevel(concludedScope);
+                    value = inputsForObjective.agreedCapability ?? suggestedCapability;
+                } else if (col === 'initialQuickScoring') {
+                    // Use suggested capability as default for initial scoring
+                    const refinedScore = allInputs && calculateScoresForSingleFactor(allInputs, 'df4').find(r => r.objectiveId === obj.id)?.finalScore || 0;
+                    const adjustment = inputsForObjective.adjustment ?? 0;
+                    const concludedScope = refinedScore + adjustment;
+                    const suggestedCapability = calculateSuggestedCapabilityLevel(concludedScope);
+                    value = inputsForObjective.initialQuickScoring ?? suggestedCapability;
+                } else if (col === 'agreedFor5Years') {
+                    // Use agreed capability value for agreed 5 years
+                    const refinedScore = allInputs && calculateScoresForSingleFactor(allInputs, 'df4').find(r => r.objectiveId === obj.id)?.finalScore || 0;
+                    const adjustment = inputsForObjective.adjustment ?? 0;
+                    const concludedScope = refinedScore + adjustment;
+                    const suggestedCapability = calculateSuggestedCapabilityLevel(concludedScope);
+                    const agreedCapability = inputsForObjective.agreedCapability ?? suggestedCapability;
+                    value = agreedCapability;
+                } else if (col.startsWith('yearlyScore_')) {
+                    // Use agreed capability as default for yearly scores
+                    const refinedScore = allInputs && calculateScoresForSingleFactor(allInputs, 'df4').find(r => r.objectiveId === obj.id)?.finalScore || 0;
+                    const adjustment = inputsForObjective.adjustment ?? 0;
+                    const concludedScope = refinedScore + adjustment;
+                    const suggestedCapability = calculateSuggestedCapabilityLevel(concludedScope);
+                    const agreedCapability = inputsForObjective.agreedCapability ?? suggestedCapability;
+                    value = inputsForObjective[col as keyof typeof inputsForObjective] as number | undefined ?? agreedCapability;
+                }
+                
+                if (typeof value === 'number' && !isNaN(value)) {
+                    summaries[col].sum += value;
+                    summaries[col].count += 1;
+                }
+            });
         });
 
         const finalSummaries: { [key: string]: { average: number, count: number } } = {};
