@@ -81,18 +81,18 @@ class WeightService {
       // Handle different mapping structures
       if (factorId === 'df1') {
         // DF1 has different structure: { objectiveId: { strategyId: weight } }
-        return hardcodedMapping[objectiveId]?.[sourceId] || 1.0;
+        return hardcodedMapping[objectiveId]?.[sourceId] || 0;
       } else if (factorId === 'df4') {
         // DF4 has structure: { issueId: { objectiveId: weight } }
-        return hardcodedMapping[sourceId]?.[objectiveId] || 1.0;
+        return hardcodedMapping[sourceId]?.[objectiveId] || 0;
       } else {
         // Other DFs have structure: { objectiveId: { sourceId: weight } }
-        return hardcodedMapping[objectiveId]?.[sourceId] || 1.0;
+        return hardcodedMapping[objectiveId]?.[sourceId] || 0;
       }
     }
 
     // Default fallback
-    return 1.0;
+    return 0;
   }
 
   // Get all weights for a specific factor
