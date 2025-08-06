@@ -22,9 +22,11 @@
 Create a `.env` file in the root directory with:
 
 ```
-REACT_APP_SUPABASE_URL=your_project_url_here
-REACT_APP_SUPABASE_ANON_KEY=your_anon_key_here
+REACT_APP_SUPABASE_URL=https://enjnaaimexwxiiiofidd.supabase.co
+REACT_APP_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVuam5hYWltZXh3eGlpaW9maWRkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTQ0NjI1MTksImV4cCI6MjA3MDAzODUxOX0.wZ58_BE9ufAXtMqYiOWQlPHG3NQ5NHtvMpDnh7vf7yg
 ```
+
+**Note:** The credentials are already configured. Just copy the content from `env.example` to `.env` file.
 
 ## Step 4: Set Up Database Tables
 
