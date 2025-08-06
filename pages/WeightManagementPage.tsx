@@ -366,7 +366,7 @@ const WeightManagementPage: React.FC = () => {
   };
 
   const getWeight = (factorId: string, sourceId: string, objectiveId: string): number => {
-    return editingWeights[factorId]?.[sourceId]?.[objectiveId] || 1.0;
+    return editingWeights[factorId]?.[sourceId]?.[objectiveId] || 0;
   };
 
   return (
@@ -618,15 +618,15 @@ const WeightManagementPage: React.FC = () => {
                           </td>
                           {GOVERNANCE_OBJECTIVES.map(obj => (
                             <td key={obj.id} className="border border-gray-300 px-2 py-1">
-                              <input
-                                type="number"
-                                step="any"
-                                min="0"
-                                max="10"
-                                value={getWeight(selectedFactor, item.id, obj.id)}
-                                onChange={(e) => updateWeight(selectedFactor, item.id, obj.id, parseFloat(e.target.value) || 0)}
-                                className="w-full text-center text-sm border-none focus:ring-2 focus:ring-blue-500 rounded"
-                              />
+                                                             <input
+                                 type="number"
+                                 step="0.01"
+                                 min="0"
+                                 max="10"
+                                 value={getWeight(selectedFactor, item.id, obj.id)}
+                                 onChange={(e) => updateWeight(selectedFactor, item.id, obj.id, parseFloat(e.target.value) || 0)}
+                                 className="w-full text-center text-sm border-none focus:ring-2 focus:ring-blue-500 rounded"
+                               />
                             </td>
                           ))}
                         </tr>
