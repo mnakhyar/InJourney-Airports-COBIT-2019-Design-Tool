@@ -1,0 +1,6 @@
+{
+  "name": "InJourney Airports -  COBIT Governance System Design Tool",
+  "description": "An interactive web application for designing a tailored I&T governance system based on COBIT® 2019. The tool allows users to input data for 10 design factors, view immediate results for each factor, and generate a final, consolidated governance design.",
+  "requestFramePermissions": [],
+  "prompt": ""
+}

@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="./vite.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>COBIT Governance Design Tool</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+      tailwind.config = {
+        theme: {
+          extend: {
+            colors: {
+              primary: {
+                DEFAULT: '#0D47A1',
+                light: '#1976D2',
+                dark: '#0A3880',
+              },
+              secondary: '#FFC107',
+              accent: '#4CAF50',
+            },
+          },
+        },
+      }
+    </script>
+    <style type="text/css" media="print">
+      @page {
+        size: landscape; /* Use landscape for wide tables */
+        margin: 0.5in;
+      }
+      body {
+        -webkit-print-color-adjust: exact !important;
+        print-color-adjust: exact !important;
+        background-color: white !important;
+      }
+
+      /* Hide elements not meant for printing */
+      .no-print {
+        display: none !important;
+      }
+
+      /* When printing, remove layout constraints from the main container to use full page width */
+      .container {
+          max-width: none !important;
+          padding: 0 !important;
+          margin: 0 !important;
+          width: 100% !important;
+      }
+      main {
+          padding: 0 !important;
+          border: none !important;
+      }
+      
+      .printable-area {
+        display: block !important;
+      }
+      
+      /* This is the key: force scrollable containers to expand to their full content size */
+      .printable-area .overflow-auto,
+      .printable-area .overflow-x-auto,
+      .printable-area .overflow-y-auto,
+      .printable-area [style*="max-height"],
+      .printable-area [style*="maxHeight"] {
+        overflow: visible !important;
+        max-height: none !important;
+      }
+
+      /* Disable sticky positioning for table headers, which interferes with printing */
+      .printable-area th[class*="sticky"] {
+          position: static !important;
+      }
+
+      /* Improve long tables by repeating headers on each page */
+      .printable-area thead {
+        display: table-header-group;
+      }
+
+      /* Prevent elements from being awkwardly split across page breaks */
+      .card-print-avoid,
+      .printable-area tr {
+        page-break-inside: avoid !important;
+        break-inside: avoid !important;
+      }
+      
+      /* Clean up decorative styles for a better print output */
+      .printable-area .shadow-lg, .printable-area .shadow-xl, .printable-area .rounded-lg, .printable-area .rounded-xl {
+          box-shadow: none !important;
+          border-radius: 0 !important;
+      }
+      .printable-area .overflow-auto.border {
+          border: none !important; /* Remove borders that are part of scroll containers */
+      }
+       .card-print-avoid {
+        border: 1px solid #ddd; /* Add a simple border to cards in print */
+      }
+    </style>
+  <script type="importmap">
+{
+  "imports": {
+    "react/": "https://esm.sh/react@^19.1.1/",
+    "react": "https://esm.sh/react@^19.1.1",
+    "react-dom/": "https://esm.sh/react-dom@^19.1.1/",
+    "recharts": "https://esm.sh/recharts@^3.1.0",
+    "vite": "https://esm.sh/vite@^7.0.6",
+    "@vitejs/plugin-react": "https://esm.sh/@vitejs/plugin-react@^4.7.0",
+    "react-router-dom": "https://esm.sh/react-router-dom@^7.7.1"
+  }
+}
+</script>
+<link rel="stylesheet" href="/index.css">
+</head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/index.tsx"></script>
+    <script type="text/javascript">
+      // Single Page Apps for GitHub Pages
+      // MIT License
+      // https://github.com/rafgraph/spa-github-pages
+      // This script checks to see if a redirect is present in the query string,
+      // converts it back into the correct url and adds it to the
+      // browser's history using window.history.replaceState(...),
+      // which won't cause the browser to attempt to load the new url.
+      // When the single page app is loaded further down in this file,
+      // the correct url will be waiting in the browser's history for
+      // the single page app to route accordingly.
+      (function(l) {
+        if (l.search[1] === '/' ) {
+          var decoded = l.search.slice(1).split('&').map(function(s) { 
+            return s.replace(/~and~/g, '&')
+          }).join('?');
+          window.history.replaceState(null, null,
+              l.pathname.slice(0, -1) + decoded + l.hash
+          );
+        }
+      }(window.location))
+    </script>
+  </body>
+</html>

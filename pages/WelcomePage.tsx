@@ -1,0 +1,346 @@
+import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import Card from '../components/common/Card';
+import Button from '../components/common/Button';
+import ConfirmDialog from '../components/common/ConfirmDialog';
+
+interface SavedProject {
+  id: string;
+  name: string;
+  description?: string;
+  inputs: any;
+  createdAt: string;
+  updatedAt: string;
+  version: string;
+}
+
+const WelcomePage: React.FC = () => {
+  const navigate = useNavigate();
+  const [projects, setProjects] = useState<SavedProject[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [showNewProjectDialog, setShowNewProjectDialog] = useState(false);
+  const [projectName, setProjectName] = useState('');
+  const [projectDescription, setProjectDescription] = useState('');
+  
+  // Confirm dialog states
+  const [showConfirmDialog, setShowConfirmDialog] = useState<boolean>(false);
+  const [confirmDialogConfig, setConfirmDialogConfig] = useState<{
+    title: string;
+    message: string;
+    onConfirm: () => void;
+    type?: 'warning' | 'info' | 'error';
+  } | null>(null);
+
+  useEffect(() => {
+    loadProjects();
+  }, []);
+
+  const loadProjects = () => {
+    setLoading(true);
+    try {
+      const stored = localStorage.getItem('cobit_projects');
+      const projects = stored ? JSON.parse(stored) : [];
+      setProjects(projects);
+    } catch (error) {
+      console.error('Failed to load projects:', error);
+    }
+    setLoading(false);
+  };
+
+  const saveProject = (name: string, description: string, inputs: any) => {
+    const project: SavedProject = {
+      id: Date.now().toString(36) + Math.random().toString(36).substr(2),
+      name,
+      description,
+      inputs,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+      version: '1.0'
+    };
+
+    const existingProjects = JSON.parse(localStorage.getItem('cobit_projects') || '[]');
+    existingProjects.push(project);
+    localStorage.setItem('cobit_projects', JSON.stringify(existingProjects));
+    return project;
+  };
+
+  const handleNewProject = () => {
+    setShowNewProjectDialog(true);
+  };
+
+  const openConfirmDialog = (title: string, message: string, onConfirm: () => void, type: 'warning' | 'info' | 'error' = 'warning') => {
+    setConfirmDialogConfig({ title, message, onConfirm, type });
+    setShowConfirmDialog(true);
+  };
+
+  const handleCreateNewProject = () => {
+    if (!projectName.trim()) {
+      openConfirmDialog(
+        'Error',
+        'Please enter a project name',
+        () => {},
+        'error'
+      );
+      return;
+    }
+
+    // Create new project with default inputs
+    const project = saveProject(projectName, projectDescription, {});
+    localStorage.setItem('cobit_current_project', project.id);
+    setShowNewProjectDialog(false);
+    // Force page reload to trigger App.tsx useEffect
+    window.location.href = window.location.pathname;
+  };
+
+  const handleLoadProject = (project: SavedProject) => {
+    localStorage.setItem('cobit_current_project', project.id);
+    // Force page reload to trigger App.tsx useEffect
+    window.location.href = window.location.pathname;
+  };
+
+  const handleDeleteProject = (projectId: string, event: React.MouseEvent) => {
+    event.stopPropagation();
+        openConfirmDialog(
+      'Delete Project',
+      'Are you sure you want to delete this project?',
+      () => {
+        const existingProjects = JSON.parse(localStorage.getItem('cobit_projects') || '[]');
+        const filteredProjects = existingProjects.filter((p: SavedProject) => p.id !== projectId);
+        localStorage.setItem('cobit_projects', JSON.stringify(filteredProjects));
+        setProjects(filteredProjects);
+        openConfirmDialog(
+          'Success',
+          'Project deleted successfully!',
+          () => {},
+          'info'
+        );
+      },
+      'warning'
+    );
+  };
+
+  const handleExport = () => {
+    const data = {
+      projects: JSON.parse(localStorage.getItem('cobit_projects') || '[]'),
+      exportDate: new Date().toISOString()
+    };
+    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `cobit-projects-${new Date().toISOString().split('T')[0]}.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
+  const handleImport = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      try {
+        const content = e.target?.result as string;
+        const data = JSON.parse(content);
+                          if (data.projects) {
+                    localStorage.setItem('cobit_projects', JSON.stringify(data.projects));
+                    openConfirmDialog(
+                      'Success',
+                      'Data imported successfully!',
+                      () => {},
+                      'info'
+                    );
+                    loadProjects();
+                  }
+                } catch (error) {
+                  openConfirmDialog(
+                    'Error',
+                    'Failed to import data',
+                    () => {},
+                    'error'
+                  );
+                }
+    };
+    reader.readAsText(file);
+  };
+
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center p-4">
+      <div className="max-w-4xl w-full">
+        {/* Header */}
+        <div className="text-center mb-8">
+          <h1 className="text-4xl font-bold text-gray-800 mb-4">
+            COBIT® Governance Design Tool
+          </h1>
+          <p className="text-lg text-gray-600">
+            Welcome! Choose to start a new project or load an existing one.
+          </p>
+        </div>
+
+        <div className="grid md:grid-cols-2 gap-8">
+          {/* New Project Section */}
+          <Card className="p-6">
+            <div className="text-center">
+              <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                <svg className="w-8 h-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                </svg>
+              </div>
+              <h2 className="text-2xl font-semibold text-gray-800 mb-4">New Project</h2>
+              <p className="text-gray-600 mb-6">
+                Start fresh with a new COBIT governance assessment project.
+              </p>
+                             <Button 
+                 onClick={handleNewProject} 
+                 variant="primary" 
+                 className="w-full bg-green-600 hover:bg-green-700 text-white font-semibold py-3 px-6 rounded-lg shadow-lg transition-colors duration-200"
+               >
+                 Create New Project
+               </Button>
+            </div>
+          </Card>
+
+          {/* Load Project Section */}
+          <Card className="p-6">
+            <div className="text-center">
+              <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                <svg className="w-8 h-8 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
+                </svg>
+              </div>
+              <h2 className="text-2xl font-semibold text-gray-800 mb-4">Load Project</h2>
+              <p className="text-gray-600 mb-6">
+                Continue working on an existing project.
+              </p>
+              
+              {/* Export/Import Buttons */}
+              <div className="flex space-x-2 mb-4">
+                <Button onClick={handleExport} variant="secondary" size="sm">
+                  Export All
+                </Button>
+                <label className="cursor-pointer">
+                  <input
+                    type="file"
+                    accept=".json"
+                    onChange={handleImport}
+                    className="hidden"
+                  />
+                  <Button variant="secondary" size="sm">
+                    Import
+                  </Button>
+                </label>
+              </div>
+
+              {/* Project List */}
+              <div className="max-h-64 overflow-y-auto">
+                {loading ? (
+                  <div className="text-center py-4 text-gray-500">Loading projects...</div>
+                ) : projects.length === 0 ? (
+                  <div className="text-center py-4 text-gray-500">No saved projects found.</div>
+                ) : (
+                  <div className="space-y-2">
+                    {projects.map((project) => (
+                      <div
+                        key={project.id}
+                        onClick={() => handleLoadProject(project)}
+                        className="p-3 border border-gray-200 rounded-lg hover:bg-gray-50 cursor-pointer transition-colors"
+                      >
+                        <div className="flex justify-between items-start">
+                          <div className="flex-1 text-left">
+                            <h3 className="font-medium text-gray-800">{project.name}</h3>
+                            {project.description && (
+                              <p className="text-sm text-gray-600 mt-1">{project.description}</p>
+                            )}
+                            <p className="text-xs text-gray-500 mt-1">
+                              Updated: {new Date(project.updatedAt).toLocaleDateString()}
+                            </p>
+                          </div>
+                          <button
+                            onClick={(e) => handleDeleteProject(project.id, e)}
+                            className="text-red-500 hover:text-red-700 ml-2"
+                            title="Delete project"
+                          >
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                            </svg>
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+          </Card>
+        </div>
+
+        {/* New Project Dialog */}
+        {showNewProjectDialog && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+            <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
+              <h3 className="text-xl font-semibold mb-4">Create New Project</h3>
+              
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Project Name *
+                  </label>
+                  <input
+                    type="text"
+                    value={projectName}
+                    onChange={(e) => setProjectName(e.target.value)}
+                    className="w-full border border-gray-300 rounded-md px-3 py-2"
+                    placeholder="Enter project name..."
+                    autoFocus
+                  />
+                </div>
+                
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Description
+                  </label>
+                  <textarea
+                    value={projectDescription}
+                    onChange={(e) => setProjectDescription(e.target.value)}
+                    className="w-full border border-gray-300 rounded-md px-3 py-2"
+                    rows={3}
+                    placeholder="Project description (optional)..."
+                  />
+                </div>
+              </div>
+
+              <div className="flex justify-end space-x-2 mt-6">
+                <Button 
+                  onClick={() => setShowNewProjectDialog(false)} 
+                  variant="secondary"
+                >
+                  Cancel
+                </Button>
+                                 <Button 
+                   onClick={handleCreateNewProject}
+                   className="bg-green-600 hover:bg-green-700 text-white font-semibold py-2 px-4 rounded-lg transition-colors duration-200"
+                 >
+                   Create Project
+                 </Button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Confirm Dialog */}
+        {showConfirmDialog && confirmDialogConfig && (
+          <ConfirmDialog
+            isOpen={showConfirmDialog}
+            onClose={() => setShowConfirmDialog(false)}
+            onConfirm={confirmDialogConfig.onConfirm}
+            title={confirmDialogConfig.title}
+            message={confirmDialogConfig.message}
+            type={confirmDialogConfig.type}
+          />
+        )}
+      </div>
+    </div>
+  );
+};
+
+export default WelcomePage; 
