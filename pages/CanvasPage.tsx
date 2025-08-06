@@ -191,51 +191,81 @@ const CanvasPage: React.FC<{ allInputs: UserInputs }> = ({ allInputs }) => {
             summaries[col] = { sum: 0, count: 0 };
         });
 
+        // Ensure we have allInputs data, if not use default values
+        const hasAllInputs = allInputs && Object.keys(allInputs).length > 0;
+        
         GOVERNANCE_OBJECTIVES.forEach(obj => {
             // Always calculate summary, even if no user inputs yet
             const inputsForObjective = canvasInputs[obj.id] || {};
             
             summaryColumns.forEach(col => {
-                let value: number | undefined;
+                let value: number = 0; // Default fallback value
                 
-                if (col === 'suggestedCapability') {
-                    // Calculate suggested capability from concluded scope
-                    const refinedScore = allInputs && calculateScoresForSingleFactor(allInputs, 'df4').find(r => r.objectiveId === obj.id)?.finalScore || 0;
-                    const adjustment = inputsForObjective.adjustment ?? 0;
-                    const concludedScope = refinedScore + adjustment;
-                    value = calculateSuggestedCapabilityLevel(concludedScope);
-                } else if (col === 'agreedCapability') {
-                    // Use suggested capability as default if no user input
-                    const refinedScore = allInputs && calculateScoresForSingleFactor(allInputs, 'df4').find(r => r.objectiveId === obj.id)?.finalScore || 0;
-                    const adjustment = inputsForObjective.adjustment ?? 0;
-                    const concludedScope = refinedScore + adjustment;
-                    const suggestedCapability = calculateSuggestedCapabilityLevel(concludedScope);
-                    value = inputsForObjective.agreedCapability ?? suggestedCapability;
-                } else if (col === 'initialQuickScoring') {
-                    // Use suggested capability as default for initial scoring
-                    const refinedScore = allInputs && calculateScoresForSingleFactor(allInputs, 'df4').find(r => r.objectiveId === obj.id)?.finalScore || 0;
-                    const adjustment = inputsForObjective.adjustment ?? 0;
-                    const concludedScope = refinedScore + adjustment;
-                    const suggestedCapability = calculateSuggestedCapabilityLevel(concludedScope);
-                    value = inputsForObjective.initialQuickScoring ?? suggestedCapability;
-                } else if (col === 'agreedFor5Years') {
-                    // Use agreed capability value for agreed 5 years
-                    const refinedScore = allInputs && calculateScoresForSingleFactor(allInputs, 'df4').find(r => r.objectiveId === obj.id)?.finalScore || 0;
-                    const adjustment = inputsForObjective.adjustment ?? 0;
-                    const concludedScope = refinedScore + adjustment;
-                    const suggestedCapability = calculateSuggestedCapabilityLevel(concludedScope);
-                    const agreedCapability = inputsForObjective.agreedCapability ?? suggestedCapability;
-                    value = agreedCapability;
-                } else if (col.startsWith('yearlyScore_')) {
-                    // Use agreed capability as default for yearly scores
-                    const refinedScore = allInputs && calculateScoresForSingleFactor(allInputs, 'df4').find(r => r.objectiveId === obj.id)?.finalScore || 0;
-                    const adjustment = inputsForObjective.adjustment ?? 0;
-                    const concludedScope = refinedScore + adjustment;
-                    const suggestedCapability = calculateSuggestedCapabilityLevel(concludedScope);
-                    const agreedCapability = inputsForObjective.agreedCapability ?? suggestedCapability;
-                    value = inputsForObjective[col as keyof typeof inputsForObjective] as number | undefined ?? agreedCapability;
+                try {
+                    if (col === 'suggestedCapability') {
+                        // Calculate suggested capability from concluded scope
+                        let refinedScore = 0;
+                        if (hasAllInputs) {
+                            const df4Result = calculateScoresForSingleFactor(allInputs, 'df4').find(r => r.objectiveId === obj.id);
+                            refinedScore = df4Result?.finalScore || 0;
+                        }
+                        const adjustment = inputsForObjective.adjustment ?? 0;
+                        const concludedScope = refinedScore + adjustment;
+                        value = calculateSuggestedCapabilityLevel(concludedScope);
+                    } else if (col === 'agreedCapability') {
+                        // Use suggested capability as default if no user input
+                        let refinedScore = 0;
+                        if (hasAllInputs) {
+                            const df4Result = calculateScoresForSingleFactor(allInputs, 'df4').find(r => r.objectiveId === obj.id);
+                            refinedScore = df4Result?.finalScore || 0;
+                        }
+                        const adjustment = inputsForObjective.adjustment ?? 0;
+                        const concludedScope = refinedScore + adjustment;
+                        const suggestedCapability = calculateSuggestedCapabilityLevel(concludedScope);
+                        value = inputsForObjective.agreedCapability ?? suggestedCapability;
+                    } else if (col === 'initialQuickScoring') {
+                        // Use suggested capability as default for initial scoring
+                        let refinedScore = 0;
+                        if (hasAllInputs) {
+                            const df4Result = calculateScoresForSingleFactor(allInputs, 'df4').find(r => r.objectiveId === obj.id);
+                            refinedScore = df4Result?.finalScore || 0;
+                        }
+                        const adjustment = inputsForObjective.adjustment ?? 0;
+                        const concludedScope = refinedScore + adjustment;
+                        const suggestedCapability = calculateSuggestedCapabilityLevel(concludedScope);
+                        value = inputsForObjective.initialQuickScoring ?? suggestedCapability;
+                    } else if (col === 'agreedFor5Years') {
+                        // Use agreed capability value for agreed 5 years
+                        let refinedScore = 0;
+                        if (hasAllInputs) {
+                            const df4Result = calculateScoresForSingleFactor(allInputs, 'df4').find(r => r.objectiveId === obj.id);
+                            refinedScore = df4Result?.finalScore || 0;
+                        }
+                        const adjustment = inputsForObjective.adjustment ?? 0;
+                        const concludedScope = refinedScore + adjustment;
+                        const suggestedCapability = calculateSuggestedCapabilityLevel(concludedScope);
+                        const agreedCapability = inputsForObjective.agreedCapability ?? suggestedCapability;
+                        value = agreedCapability;
+                    } else if (col.startsWith('yearlyScore_')) {
+                        // Use agreed capability as default for yearly scores
+                        let refinedScore = 0;
+                        if (hasAllInputs) {
+                            const df4Result = calculateScoresForSingleFactor(allInputs, 'df4').find(r => r.objectiveId === obj.id);
+                            refinedScore = df4Result?.finalScore || 0;
+                        }
+                        const adjustment = inputsForObjective.adjustment ?? 0;
+                        const concludedScope = refinedScore + adjustment;
+                        const suggestedCapability = calculateSuggestedCapabilityLevel(concludedScope);
+                        const agreedCapability = inputsForObjective.agreedCapability ?? suggestedCapability;
+                        value = inputsForObjective[col as keyof typeof inputsForObjective] as number | undefined ?? agreedCapability;
+                    }
+                } catch (error) {
+                    // If calculation fails, use default value
+                    console.warn(`Error calculating value for ${obj.id}.${col}:`, error);
+                    value = 2; // Default capability level
                 }
                 
+                // Always add to summary, even if value is 0
                 if (typeof value === 'number' && !isNaN(value)) {
                     summaries[col].sum += value;
                     summaries[col].count += 1;
