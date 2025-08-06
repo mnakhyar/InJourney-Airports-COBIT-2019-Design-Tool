@@ -158,33 +158,108 @@ const DesignFactorPage: React.FC<DesignFactorPageProps> = ({ allInputs, onInputC
         switch (factor.type) {
             case 'rating':
             case 'rating-1-3':
-                return items.map(item => {
-                    const baseline = factor.id === 'df4'
-                        ? DESIGN_FACTOR_BASELINES.df4.default
-                        : DESIGN_FACTOR_BASELINES[factor.id]?.[item.id];
-                    return (
-                        <div key={item.id} className="py-2 grid grid-cols-12 gap-4 items-center">
-                            <div className="col-span-12 sm:col-span-9">
-                                <label htmlFor={`${factor.id}-${item.id}`} className="block text-sm font-medium text-gray-700">{item.name}</label>
-                                <Slider
-                                    id={`${factor.id}-${item.id}`}
-                                    min={1}
-                                    max={factor.type === 'rating-1-3' ? 3 : 5}
-                                    value={(factorInputs[item.id] as number) || (factor.type === 'rating-1-3' ? 2 : 3)}
-                                    onChange={newValue => handleInputChange(item.id, newValue)}
-                                />
+                return (
+                    <div>
+                        {factor.id === 'df4' && (
+                            <div className="mb-4 p-3 bg-gray-50 rounded-lg">
+                                <h4 className="text-sm font-semibold text-gray-700 mb-2">Legenda:</h4>
+                                <div className="flex flex-wrap gap-4 text-xs">
+                                    <div className="flex items-center space-x-2">
+                                        <span className="w-4 h-4 bg-green-500 rounded-full flex items-center justify-center">
+                                            <svg className="w-3 h-3 text-white" fill="currentColor" viewBox="0 0 20 20">
+                                                <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                                            </svg>
+                                        </span>
+                                        <span className="text-gray-600">Ceklis: No Issue</span>
+                                    </div>
+                                    <div className="flex items-center space-x-2">
+                                        <span className="w-4 h-4 bg-yellow-500 rounded-full flex items-center justify-center">
+                                            <svg className="w-3 h-3 text-white" fill="currentColor" viewBox="0 0 20 20">
+                                                <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                                            </svg>
+                                        </span>
+                                        <span className="text-gray-600">Tanda Seru: Issue</span>
+                                    </div>
+                                    <div className="flex items-center space-x-2">
+                                        <span className="w-4 h-4 bg-red-500 rounded-full flex items-center justify-center">
+                                            <svg className="w-3 h-3 text-white" fill="currentColor" viewBox="0 0 20 20">
+                                                <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
+                                            </svg>
+                                        </span>
+                                        <span className="text-gray-600">Silang: Serius Issue</span>
+                                    </div>
+                                </div>
                             </div>
-                            <div className="col-span-12 sm:col-span-3 text-center sm:border-l sm:pl-4 mt-2 sm:mt-0">
-                                {baseline !== undefined && (
-                                    <>
-                                        <span className="text-xs text-gray-500 uppercase">Baseline</span>
-                                        <span className="block font-bold text-lg text-primary">{baseline}</span>
-                                    </>
-                                )}
-                            </div>
-                        </div>
-                    );
-                });
+                        )}
+                        {items.map(item => {
+                            const baseline = factor.id === 'df4'
+                                ? DESIGN_FACTOR_BASELINES.df4.default
+                                : DESIGN_FACTOR_BASELINES[factor.id]?.[item.id];
+                            const currentValue = (factorInputs[item.id] as number) || (factor.type === 'rating-1-3' ? 2 : 3);
+                            
+                            // Get symbol for DF4
+                            const getSymbol = (value: number) => {
+                                if (factor.id === 'df4') {
+                                    switch (value) {
+                                        case 1:
+                                            return (
+                                                <span className="w-6 h-6 bg-green-500 rounded-full flex items-center justify-center ml-2">
+                                                    <svg className="w-4 h-4 text-white" fill="currentColor" viewBox="0 0 20 20">
+                                                        <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                                                    </svg>
+                                                </span>
+                                            );
+                                        case 2:
+                                            return (
+                                                <span className="w-6 h-6 bg-yellow-500 rounded-full flex items-center justify-center ml-2">
+                                                    <svg className="w-4 h-4 text-white" fill="currentColor" viewBox="0 0 20 20">
+                                                        <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                                                    </svg>
+                                                </span>
+                                            );
+                                        case 3:
+                                            return (
+                                                <span className="w-6 h-6 bg-red-500 rounded-full flex items-center justify-center ml-2">
+                                                    <svg className="w-4 h-4 text-white" fill="currentColor" viewBox="0 0 20 20">
+                                                        <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
+                                                    </svg>
+                                                </span>
+                                            );
+                                        default:
+                                            return null;
+                                    }
+                                }
+                                return null;
+                            };
+                            
+                            return (
+                                <div key={item.id} className="py-2 grid grid-cols-12 gap-4 items-center">
+                                    <div className="col-span-12 sm:col-span-9">
+                                        <div className="flex items-center">
+                                            <label htmlFor={`${factor.id}-${item.id}`} className="block text-sm font-medium text-gray-700">{item.name}</label>
+                                            {getSymbol(currentValue)}
+                                        </div>
+                                        <Slider
+                                            id={`${factor.id}-${item.id}`}
+                                            min={1}
+                                            max={factor.type === 'rating-1-3' ? 3 : 5}
+                                            value={currentValue}
+                                            onChange={newValue => handleInputChange(item.id, newValue)}
+                                        />
+                                    </div>
+                                    <div className="col-span-12 sm:col-span-3 text-center sm:border-l sm:pl-4 mt-2 sm:mt-0">
+                                        {baseline !== undefined && (
+                                            <>
+                                                <span className="text-xs text-gray-500 uppercase">Baseline</span>
+                                                <span className="block font-bold text-lg text-primary">{baseline}</span>
+                                            </>
+                                        )}
+                                    </div>
+                                </div>
+                            );
+                        })}
+                    </div>
+                );
             case 'rating-2d':
                  return (
                     <div>
