@@ -174,34 +174,65 @@ const CanvasPage: React.FC<{ allInputs: UserInputs }> = ({ allInputs }) => {
     const yearlyTargetSummaries = useMemo(() => {
         const summaries: { [key: string]: { sum: number, count: number } } = {};
         
-        step5Cols.forEach(col => {
-            summaries[col.id] = { sum: 0, count: 0 };
+        // Define the columns to calculate summary for
+        const summaryColumns = [
+            'suggestedCapability',
+            'agreedCapability', 
+            'initialQuickScoring',
+            'agreedFor5Years',
+            'yearlyScore_1', // 2025
+            'yearlyScore_2', // 2026
+            'yearlyScore_3', // 2027
+            'yearlyScore_4', // 2028
+            'yearlyScore_5'  // 2029
+        ];
+        
+        summaryColumns.forEach(col => {
+            summaries[col] = { sum: 0, count: 0 };
         });
 
         GOVERNANCE_OBJECTIVES.forEach(obj => {
             const inputsForObjective = canvasInputs[obj.id];
             if (inputsForObjective) {
-                step5Cols.forEach(col => {
-                    const value = inputsForObjective[col.id as keyof typeof inputsForObjective] as number | undefined;
+                summaryColumns.forEach(col => {
+                    let value: number | undefined;
+                    
+                    if (col === 'suggestedCapability') {
+                        // Calculate suggested capability from concluded scope
+                        const refinedScore = allInputs && calculateScoresForSingleFactor(allInputs, 'df4').find(r => r.objectiveId === obj.id)?.finalScore || 0;
+                        const adjustment = inputsForObjective.adjustment ?? 0;
+                        const concludedScope = refinedScore + adjustment;
+                        value = calculateSuggestedCapabilityLevel(concludedScope);
+                    } else if (col === 'agreedCapability') {
+                        value = inputsForObjective.agreedCapability;
+                    } else if (col === 'initialQuickScoring') {
+                        value = inputsForObjective.initialQuickScoring;
+                    } else if (col === 'agreedFor5Years') {
+                        // Use agreed capability value for agreed 5 years
+                        value = inputsForObjective.agreedCapability;
+                    } else if (col.startsWith('yearlyScore_')) {
+                        value = inputsForObjective[col as keyof typeof inputsForObjective] as number | undefined;
+                    }
+                    
                     if (typeof value === 'number' && !isNaN(value)) {
-                        summaries[col.id].sum += value;
-                        summaries[col.id].count += 1;
+                        summaries[col].sum += value;
+                        summaries[col].count += 1;
                     }
                 });
             }
         });
 
         const finalSummaries: { [key: string]: { average: number, count: number } } = {};
-        step5Cols.forEach(col => {
-            const { sum, count } = summaries[col.id];
-            finalSummaries[col.id] = {
+        summaryColumns.forEach(col => {
+            const { sum, count } = summaries[col];
+            finalSummaries[col] = {
                 average: count > 0 ? sum / count : 0,
                 count: count
             };
         });
 
         return finalSummaries;
-    }, [canvasInputs]);
+    }, [canvasInputs, allInputs]);
 
     const handlePrint = () => window.print();
     
@@ -374,20 +405,66 @@ const CanvasPage: React.FC<{ allInputs: UserInputs }> = ({ allInputs }) => {
                                 <tr>
                                     <th scope="row" className="sticky left-0 p-2 text-left align-middle w-96 bg-gray-200 border-r border-t border-gray-300 z-30">Score</th>
                                     <td colSpan={step2Cols.length + step3Cols.length + step4Cols.length} className="border-t border-gray-300"></td>
-                                    {step5Cols.map(col => (
-                                        <td key={`summary-score-${col.id}`} className="p-2 whitespace-nowrap text-center bg-purple-200 border-r border-t border-gray-300">
-                                            {yearlyTargetSummaries[col.id].average > 0 ? yearlyTargetSummaries[col.id].average.toFixed(2) : '-'}
-                                        </td>
-                                    ))}
+                                    {step5Cols.map(col => {
+                                        // Only show summary for specific columns
+                                        const summaryColumns = [
+                                            'suggestedCapability',
+                                            'agreedCapability', 
+                                            'initialQuickScoring',
+                                            'agreedFor5Years',
+                                            'yearlyScore_1', // 2025
+                                            'yearlyScore_2', // 2026
+                                            'yearlyScore_3', // 2027
+                                            'yearlyScore_4', // 2028
+                                            'yearlyScore_5'  // 2029
+                                        ];
+                                        
+                                        if (summaryColumns.includes(col.id)) {
+                                            return (
+                                                <td key={`summary-score-${col.id}`} className="p-2 whitespace-nowrap text-center bg-purple-200 border-r border-t border-gray-300">
+                                                    {yearlyTargetSummaries[col.id]?.average > 0 ? yearlyTargetSummaries[col.id].average.toFixed(2) : '-'}
+                                                </td>
+                                            );
+                                        } else {
+                                            return (
+                                                <td key={`summary-score-${col.id}`} className="p-2 whitespace-nowrap text-center bg-purple-200 border-r border-t border-gray-300">
+                                                    -
+                                                </td>
+                                            );
+                                        }
+                                    })}
                                 </tr>
                                 <tr>
                                     <th scope="row" className="sticky left-0 p-2 text-left align-middle w-96 bg-gray-200 border-r border-gray-300 z-30">Gamo Num</th>
                                     <td colSpan={step2Cols.length + step3Cols.length + step4Cols.length}></td>
-                                    {step5Cols.map(col => (
-                                        <td key={`summary-count-${col.id}`} className="p-2 whitespace-nowrap text-center bg-purple-200 border-r border-gray-200">
-                                            {yearlyTargetSummaries[col.id].count > 0 ? yearlyTargetSummaries[col.id].count : '-'}
-                                        </td>
-                                    ))}
+                                    {step5Cols.map(col => {
+                                        // Only show summary for specific columns
+                                        const summaryColumns = [
+                                            'suggestedCapability',
+                                            'agreedCapability', 
+                                            'initialQuickScoring',
+                                            'agreedFor5Years',
+                                            'yearlyScore_1', // 2025
+                                            'yearlyScore_2', // 2026
+                                            'yearlyScore_3', // 2027
+                                            'yearlyScore_4', // 2028
+                                            'yearlyScore_5'  // 2029
+                                        ];
+                                        
+                                        if (summaryColumns.includes(col.id)) {
+                                            return (
+                                                <td key={`summary-count-${col.id}`} className="p-2 whitespace-nowrap text-center bg-purple-200 border-r border-gray-200">
+                                                    {yearlyTargetSummaries[col.id]?.count > 0 ? yearlyTargetSummaries[col.id].count : '-'}
+                                                </td>
+                                            );
+                                        } else {
+                                            return (
+                                                <td key={`summary-count-${col.id}`} className="p-2 whitespace-nowrap text-center bg-purple-200 border-r border-gray-200">
+                                                    -
+                                                </td>
+                                            );
+                                        }
+                                    })}
                                 </tr>
                             </tfoot>
                         </table>
