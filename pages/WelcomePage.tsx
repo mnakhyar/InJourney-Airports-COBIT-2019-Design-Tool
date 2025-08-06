@@ -119,48 +119,195 @@ const WelcomePage: React.FC = () => {
     );
   };
 
+  const handleExportProject = (project: SavedProject, event: React.MouseEvent) => {
+    event.stopPropagation();
+    try {
+      const data = {
+        project: project,
+        exportDate: new Date().toISOString(),
+        version: '1.0',
+        tool: 'COBIT Governance Design Tool'
+      };
+      
+      const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `cobit-project-${project.name.replace(/[^a-z0-9]/gi, '-').toLowerCase()}-${new Date().toISOString().split('T')[0]}.json`;
+      a.click();
+      URL.revokeObjectURL(url);
+      
+      openConfirmDialog(
+        'Success',
+        `Project "${project.name}" exported successfully!`,
+        () => {},
+        'info'
+      );
+    } catch (error) {
+      console.error('Export project error:', error);
+      openConfirmDialog(
+        'Error',
+        'Failed to export project. Please try again.',
+        () => {},
+        'error'
+      );
+    }
+  };
+
   const handleExport = () => {
-    const data = {
-      projects: JSON.parse(localStorage.getItem('cobit_projects') || '[]'),
-      exportDate: new Date().toISOString()
-    };
-    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `cobit-projects-${new Date().toISOString().split('T')[0]}.json`;
-    a.click();
-    URL.revokeObjectURL(url);
+    try {
+      const projects = JSON.parse(localStorage.getItem('cobit_projects') || '[]');
+      
+      if (projects.length === 0) {
+        openConfirmDialog(
+          'No Data',
+          'No projects to export. Please save some projects first.',
+          () => {},
+          'info'
+        );
+        return;
+      }
+
+      const data = {
+        projects: projects,
+        exportDate: new Date().toISOString(),
+        version: '1.0',
+        tool: 'COBIT Governance Design Tool'
+      };
+      
+      const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `cobit-projects-${new Date().toISOString().split('T')[0]}.json`;
+      a.click();
+      URL.revokeObjectURL(url);
+      
+      openConfirmDialog(
+        'Success',
+        `Successfully exported ${projects.length} project(s)!`,
+        () => {},
+        'info'
+      );
+    } catch (error) {
+      console.error('Export error:', error);
+      openConfirmDialog(
+        'Error',
+        'Failed to export data. Please try again.',
+        () => {},
+        'error'
+      );
+    }
   };
 
   const handleImport = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (!file) return;
 
+    // Validate file type
+    if (file.type !== 'application/json' && !file.name.endsWith('.json')) {
+      openConfirmDialog(
+        'Error',
+        'Please select a valid JSON file',
+        () => {},
+        'error'
+      );
+      return;
+    }
+
     const reader = new FileReader();
     reader.onload = (e) => {
       try {
         const content = e.target?.result as string;
         const data = JSON.parse(content);
-                          if (data.projects) {
-                    localStorage.setItem('cobit_projects', JSON.stringify(data.projects));
-                    openConfirmDialog(
-                      'Success',
-                      'Data imported successfully!',
-                      () => {},
-                      'info'
-                    );
-                    loadProjects();
-                  }
-                } catch (error) {
-                  openConfirmDialog(
-                    'Error',
-                    'Failed to import data',
-                    () => {},
-                    'error'
-                  );
-                }
+        
+        // Validate data structure - support both single project and multiple projects
+        let projectsToImport: any[] = [];
+        
+        if (data.projects && Array.isArray(data.projects)) {
+          // Multiple projects format
+          projectsToImport = data.projects;
+        } else if (data.project && typeof data.project === 'object') {
+          // Single project format
+          projectsToImport = [data.project];
+        } else {
+          openConfirmDialog(
+            'Error',
+            'Invalid file format. Please select a valid COBIT export file.',
+            () => {},
+            'error'
+          );
+          return;
+        }
+
+        // Validate each project structure
+        const validProjects = projectsToImport.filter((project: any) => {
+          return project && 
+                 typeof project.id === 'string' && 
+                 typeof project.name === 'string' && 
+                 project.inputs && 
+                 typeof project.createdAt === 'string' && 
+                 typeof project.updatedAt === 'string';
+        });
+
+        if (validProjects.length === 0) {
+          openConfirmDialog(
+            'Error',
+            'No valid projects found in the file.',
+            () => {},
+            'error'
+          );
+          return;
+        }
+
+        // Merge with existing projects (avoid duplicates by ID)
+        const existingProjects = JSON.parse(localStorage.getItem('cobit_projects') || '[]');
+        const existingIds = new Set(existingProjects.map((p: any) => p.id));
+        
+        const newProjects = validProjects.filter((project: any) => !existingIds.has(project.id));
+        const allProjects = [...existingProjects, ...newProjects];
+        
+        // Save to localStorage
+        localStorage.setItem('cobit_projects', JSON.stringify(allProjects));
+        
+        const importedCount = newProjects.length;
+        const skippedCount = validProjects.length - newProjects.length;
+        
+        let message = `Successfully imported ${importedCount} project(s)!`;
+        if (skippedCount > 0) {
+          message += ` (${skippedCount} project(s) skipped - already exists)`;
+        }
+        
+        openConfirmDialog(
+          'Success',
+          message,
+          () => {
+            loadProjects();
+            // Reset file input
+            event.target.value = '';
+          },
+          'info'
+        );
+      } catch (error) {
+        console.error('Import error:', error);
+        openConfirmDialog(
+          'Error',
+          'Failed to import data. Please check if the file is a valid JSON export.',
+          () => {},
+          'error'
+        );
+      }
     };
+    
+    reader.onerror = () => {
+      openConfirmDialog(
+        'Error',
+        'Failed to read the file. Please try again.',
+        () => {},
+        'error'
+      );
+    };
+    
     reader.readAsText(file);
   };
 
@@ -216,7 +363,7 @@ const WelcomePage: React.FC = () => {
               {/* Export/Import Buttons */}
               <div className="flex space-x-2 mb-4">
                 <Button onClick={handleExport} variant="secondary" size="sm">
-                  Export All
+                  📤 Export All
                 </Button>
                 <label className="cursor-pointer">
                   <input
@@ -226,7 +373,7 @@ const WelcomePage: React.FC = () => {
                     className="hidden"
                   />
                   <Button variant="secondary" size="sm">
-                    Import
+                    📥 Import
                   </Button>
                 </label>
               </div>
@@ -255,15 +402,26 @@ const WelcomePage: React.FC = () => {
                               Updated: {new Date(project.updatedAt).toLocaleDateString()}
                             </p>
                           </div>
-                          <button
-                            onClick={(e) => handleDeleteProject(project.id, e)}
-                            className="text-red-500 hover:text-red-700 ml-2"
-                            title="Delete project"
-                          >
-                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                            </svg>
-                          </button>
+                          <div className="flex space-x-1">
+                            <button
+                              onClick={(e) => handleExportProject(project, e)}
+                              className="text-blue-500 hover:text-blue-700"
+                              title="Export project"
+                            >
+                              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                              </svg>
+                            </button>
+                            <button
+                              onClick={(e) => handleDeleteProject(project.id, e)}
+                              className="text-red-500 hover:text-red-700"
+                              title="Delete project"
+                            >
+                              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                              </svg>
+                            </button>
+                          </div>
                         </div>
                       </div>
                     ))}
