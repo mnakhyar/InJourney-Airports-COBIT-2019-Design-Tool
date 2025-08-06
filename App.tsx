@@ -10,11 +10,9 @@ import DesignFactorPage from './pages/DesignFactorPage';
 import SummaryStep2Page from './pages/SummaryStep2Page';
 import SummaryStep3Page from './pages/SummaryStep3Page';
 import CanvasPage from './pages/CanvasPage';
-import WeightManagementPage from './pages/WeightManagementPage';
 import SaveLoadDialog from './components/SaveLoadDialog';
 import ConfirmDialog from './components/common/ConfirmDialog';
 import Button from './components/common/Button';
-import { weightService } from './services/weightService';
 
 function App() {
   const navigate = useNavigate();
@@ -199,11 +197,7 @@ function App() {
                   ⚠️ Unsaved changes
                 </span>
               )}
-              {weightService.isUsingDatabaseWeights() && (
-                <span className="text-green-500 text-sm font-medium mr-2">
-                  🗄️ DB Weights: {weightService.getWeightSourceInfo().configName}
-                </span>
-              )}
+
               <Button 
                 onClick={() => {
                   if (hasUnsavedChanges) {
@@ -294,10 +288,7 @@ function App() {
                   path="/canvas" 
                   element={<CanvasPage allInputs={userInputs} />} 
                 />
-                <Route 
-                  path="/weight-management" 
-                  element={<WeightManagementPage />} 
-                />
+
               </Routes>
           </main>
         </div>
