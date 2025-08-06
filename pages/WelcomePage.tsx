@@ -100,20 +100,47 @@ const WelcomePage: React.FC = () => {
 
   const handleDeleteProject = (projectId: string, event: React.MouseEvent) => {
     event.stopPropagation();
-        openConfirmDialog(
+    
+    // Find project name for better notification
+    const existingProjects = JSON.parse(localStorage.getItem('cobit_projects') || '[]');
+    const projectToDelete = existingProjects.find((p: SavedProject) => p.id === projectId);
+    const projectName = projectToDelete?.name || 'Project';
+    
+    openConfirmDialog(
       'Delete Project',
-      'Are you sure you want to delete this project?',
+      `Are you sure you want to delete project "${projectName}"?`,
       () => {
-        const existingProjects = JSON.parse(localStorage.getItem('cobit_projects') || '[]');
         const filteredProjects = existingProjects.filter((p: SavedProject) => p.id !== projectId);
         localStorage.setItem('cobit_projects', JSON.stringify(filteredProjects));
         setProjects(filteredProjects);
-        openConfirmDialog(
-          'Success',
-          'Project deleted successfully!',
-          () => {},
-          'info'
-        );
+        
+        // Show success popup notification
+        const notification = document.createElement('div');
+        notification.className = 'fixed top-4 right-4 bg-green-500 text-white px-6 py-3 rounded-lg shadow-lg z-50 transform transition-all duration-300 ease-in-out';
+        notification.style.transform = 'translateX(100%)';
+        notification.innerHTML = `
+          <div class="flex items-center space-x-2">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+            </svg>
+            <span>Project "${projectName}" deleted successfully!</span>
+          </div>
+        `;
+        
+        document.body.appendChild(notification);
+        
+        // Animate in
+        setTimeout(() => {
+          notification.style.transform = 'translateX(0)';
+        }, 100);
+        
+        // Auto remove after 3 seconds
+        setTimeout(() => {
+          notification.style.transform = 'translateX(100%)';
+          setTimeout(() => {
+            document.body.removeChild(notification);
+          }, 300);
+        }, 3000);
       },
       'warning'
     );
@@ -121,83 +148,98 @@ const WelcomePage: React.FC = () => {
 
   const handleExportProject = (project: SavedProject, event: React.MouseEvent) => {
     event.stopPropagation();
-    try {
-      const data = {
-        project: project,
-        exportDate: new Date().toISOString(),
-        version: '1.0',
-        tool: 'COBIT Governance Design Tool'
-      };
-      
-      const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `cobit-project-${project.name.replace(/[^a-z0-9]/gi, '-').toLowerCase()}-${new Date().toISOString().split('T')[0]}.json`;
-      a.click();
-      URL.revokeObjectURL(url);
-      
-      openConfirmDialog(
-        'Success',
-        `Project "${project.name}" exported successfully!`,
-        () => {},
-        'info'
-      );
-    } catch (error) {
-      console.error('Export project error:', error);
-      openConfirmDialog(
-        'Error',
-        'Failed to export project. Please try again.',
-        () => {},
-        'error'
-      );
-    }
+    
+    openConfirmDialog(
+      'Export Project',
+      `Are you sure you want to export project "${project.name}"?`,
+      () => {
+        try {
+          const data = {
+            project: project,
+            exportDate: new Date().toISOString(),
+            version: '1.0',
+            tool: 'COBIT Governance Design Tool'
+          };
+          
+          const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+          const url = URL.createObjectURL(blob);
+          const a = document.createElement('a');
+          a.href = url;
+          a.download = `cobit-project-${project.name.replace(/[^a-z0-9]/gi, '-').toLowerCase()}-${new Date().toISOString().split('T')[0]}.json`;
+          a.click();
+          URL.revokeObjectURL(url);
+          
+          openConfirmDialog(
+            'Success',
+            `Project "${project.name}" exported successfully!`,
+            () => {},
+            'info'
+          );
+        } catch (error) {
+          console.error('Export project error:', error);
+          openConfirmDialog(
+            'Error',
+            'Failed to export project. Please try again.',
+            () => {},
+            'error'
+          );
+        }
+      },
+      'info'
+    );
   };
 
   const handleExport = () => {
-    try {
-      const projects = JSON.parse(localStorage.getItem('cobit_projects') || '[]');
-      
-      if (projects.length === 0) {
-        openConfirmDialog(
-          'No Data',
-          'No projects to export. Please save some projects first.',
-          () => {},
-          'info'
-        );
-        return;
-      }
-
-      const data = {
-        projects: projects,
-        exportDate: new Date().toISOString(),
-        version: '1.0',
-        tool: 'COBIT Governance Design Tool'
-      };
-      
-      const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `cobit-projects-${new Date().toISOString().split('T')[0]}.json`;
-      a.click();
-      URL.revokeObjectURL(url);
-      
+    const projects = JSON.parse(localStorage.getItem('cobit_projects') || '[]');
+    
+    if (projects.length === 0) {
       openConfirmDialog(
-        'Success',
-        `Successfully exported ${projects.length} project(s)!`,
+        'No Data',
+        'No projects to export. Please save some projects first.',
         () => {},
         'info'
       );
-    } catch (error) {
-      console.error('Export error:', error);
-      openConfirmDialog(
-        'Error',
-        'Failed to export data. Please try again.',
-        () => {},
-        'error'
-      );
+      return;
     }
+
+    openConfirmDialog(
+      'Export All Projects',
+      `Are you sure you want to export ${projects.length} project(s)?`,
+      () => {
+        try {
+          const data = {
+            projects: projects,
+            exportDate: new Date().toISOString(),
+            version: '1.0',
+            tool: 'COBIT Governance Design Tool'
+          };
+          
+          const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+          const url = URL.createObjectURL(blob);
+          const a = document.createElement('a');
+          a.href = url;
+          a.download = `cobit-projects-${new Date().toISOString().split('T')[0]}.json`;
+          a.click();
+          URL.revokeObjectURL(url);
+          
+          openConfirmDialog(
+            'Success',
+            `Successfully exported ${projects.length} project(s)!`,
+            () => {},
+            'info'
+          );
+        } catch (error) {
+          console.error('Export error:', error);
+          openConfirmDialog(
+            'Error',
+            'Failed to export data. Please try again.',
+            () => {},
+            'error'
+          );
+        }
+      },
+      'info'
+    );
   };
 
   const handleImport = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -206,12 +248,34 @@ const WelcomePage: React.FC = () => {
 
     // Validate file type
     if (file.type !== 'application/json' && !file.name.endsWith('.json')) {
-      openConfirmDialog(
-        'Error',
-        'Please select a valid JSON file',
-        () => {},
-        'error'
-      );
+      // Show error popup notification
+      const errorNotification = document.createElement('div');
+      errorNotification.className = 'fixed top-4 right-4 bg-red-500 text-white px-6 py-3 rounded-lg shadow-lg z-50 transform transition-all duration-300 ease-in-out';
+      errorNotification.style.transform = 'translateX(100%)';
+      errorNotification.innerHTML = `
+        <div class="flex items-center space-x-2">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+          </svg>
+          <span>Please select a valid JSON file</span>
+        </div>
+      `;
+      
+      document.body.appendChild(errorNotification);
+      
+      // Animate in
+      setTimeout(() => {
+        errorNotification.style.transform = 'translateX(0)';
+      }, 100);
+      
+      // Auto remove after 3 seconds
+      setTimeout(() => {
+        errorNotification.style.transform = 'translateX(100%)';
+        setTimeout(() => {
+          document.body.removeChild(errorNotification);
+        }, 300);
+      }, 3000);
+      
       return;
     }
 
@@ -231,12 +295,34 @@ const WelcomePage: React.FC = () => {
           // Single project format
           projectsToImport = [data.project];
         } else {
-          openConfirmDialog(
-            'Error',
-            'Invalid file format. Please select a valid COBIT export file.',
-            () => {},
-            'error'
-          );
+          // Show error popup notification
+          const errorNotification = document.createElement('div');
+          errorNotification.className = 'fixed top-4 right-4 bg-red-500 text-white px-6 py-3 rounded-lg shadow-lg z-50 transform transition-all duration-300 ease-in-out';
+          errorNotification.style.transform = 'translateX(100%)';
+          errorNotification.innerHTML = `
+            <div class="flex items-center space-x-2">
+              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+              </svg>
+              <span>Invalid file format. Please select a valid COBIT export file.</span>
+            </div>
+          `;
+          
+          document.body.appendChild(errorNotification);
+          
+          // Animate in
+          setTimeout(() => {
+            errorNotification.style.transform = 'translateX(0)';
+          }, 100);
+          
+          // Auto remove after 3 seconds
+          setTimeout(() => {
+            errorNotification.style.transform = 'translateX(100%)';
+            setTimeout(() => {
+              document.body.removeChild(errorNotification);
+            }, 300);
+          }, 3000);
+          
           return;
         }
 
@@ -251,12 +337,34 @@ const WelcomePage: React.FC = () => {
         });
 
         if (validProjects.length === 0) {
-          openConfirmDialog(
-            'Error',
-            'No valid projects found in the file.',
-            () => {},
-            'error'
-          );
+          // Show error popup notification
+          const errorNotification = document.createElement('div');
+          errorNotification.className = 'fixed top-4 right-4 bg-red-500 text-white px-6 py-3 rounded-lg shadow-lg z-50 transform transition-all duration-300 ease-in-out';
+          errorNotification.style.transform = 'translateX(100%)';
+          errorNotification.innerHTML = `
+            <div class="flex items-center space-x-2">
+              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+              </svg>
+              <span>No valid projects found in the file.</span>
+            </div>
+          `;
+          
+          document.body.appendChild(errorNotification);
+          
+          // Animate in
+          setTimeout(() => {
+            errorNotification.style.transform = 'translateX(0)';
+          }, 100);
+          
+          // Auto remove after 3 seconds
+          setTimeout(() => {
+            errorNotification.style.transform = 'translateX(100%)';
+            setTimeout(() => {
+              document.body.removeChild(errorNotification);
+            }, 300);
+          }, 3000);
+          
           return;
         }
 
@@ -278,34 +386,98 @@ const WelcomePage: React.FC = () => {
           message += ` (${skippedCount} project(s) skipped - already exists)`;
         }
         
-        openConfirmDialog(
-          'Success',
-          message,
-          () => {
-            loadProjects();
-            // Reset file input
-            event.target.value = '';
-          },
-          'info'
-        );
+        // Show simple popup notification
+        const notification = document.createElement('div');
+        notification.className = 'fixed top-4 right-4 bg-green-500 text-white px-6 py-3 rounded-lg shadow-lg z-50 transform transition-all duration-300 ease-in-out';
+        notification.style.transform = 'translateX(100%)';
+        notification.innerHTML = `
+          <div class="flex items-center space-x-2">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+            </svg>
+            <span>${message}</span>
+          </div>
+        `;
+        
+        document.body.appendChild(notification);
+        
+        // Animate in
+        setTimeout(() => {
+          notification.style.transform = 'translateX(0)';
+        }, 100);
+        
+        // Auto remove after 3 seconds
+        setTimeout(() => {
+          notification.style.transform = 'translateX(100%)';
+          setTimeout(() => {
+            document.body.removeChild(notification);
+          }, 300);
+        }, 3000);
+        
+        loadProjects();
+        // Reset file input
+        event.target.value = '';
       } catch (error) {
         console.error('Import error:', error);
-        openConfirmDialog(
-          'Error',
-          'Failed to import data. Please check if the file is a valid JSON export.',
-          () => {},
-          'error'
-        );
+        
+        // Show error popup notification
+        const errorNotification = document.createElement('div');
+        errorNotification.className = 'fixed top-4 right-4 bg-red-500 text-white px-6 py-3 rounded-lg shadow-lg z-50 transform transition-all duration-300 ease-in-out';
+        errorNotification.style.transform = 'translateX(100%)';
+        errorNotification.innerHTML = `
+          <div class="flex items-center space-x-2">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+            </svg>
+            <span>Failed to import data. Please check if the file is a valid JSON export.</span>
+          </div>
+        `;
+        
+        document.body.appendChild(errorNotification);
+        
+        // Animate in
+        setTimeout(() => {
+          errorNotification.style.transform = 'translateX(0)';
+        }, 100);
+        
+        // Auto remove after 4 seconds
+        setTimeout(() => {
+          errorNotification.style.transform = 'translateX(100%)';
+          setTimeout(() => {
+            document.body.removeChild(errorNotification);
+          }, 300);
+        }, 4000);
       }
     };
     
     reader.onerror = () => {
-      openConfirmDialog(
-        'Error',
-        'Failed to read the file. Please try again.',
-        () => {},
-        'error'
-      );
+      // Show error popup notification
+      const errorNotification = document.createElement('div');
+      errorNotification.className = 'fixed top-4 right-4 bg-red-500 text-white px-6 py-3 rounded-lg shadow-lg z-50 transform transition-all duration-300 ease-in-out';
+      errorNotification.style.transform = 'translateX(100%)';
+      errorNotification.innerHTML = `
+        <div class="flex items-center space-x-2">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+          </svg>
+          <span>Failed to read the file. Please try again.</span>
+        </div>
+      `;
+      
+      document.body.appendChild(errorNotification);
+      
+      // Animate in
+      setTimeout(() => {
+        errorNotification.style.transform = 'translateX(0)';
+      }, 100);
+      
+      // Auto remove after 3 seconds
+      setTimeout(() => {
+        errorNotification.style.transform = 'translateX(100%)';
+        setTimeout(() => {
+          document.body.removeChild(errorNotification);
+        }, 300);
+      }, 3000);
     };
     
     reader.readAsText(file);
@@ -365,17 +537,18 @@ const WelcomePage: React.FC = () => {
                 <Button onClick={handleExport} variant="secondary" size="sm">
                   📤 Export All
                 </Button>
-                <label className="cursor-pointer">
+                <div className="relative">
                   <input
                     type="file"
                     accept=".json"
                     onChange={handleImport}
-                    className="hidden"
+                    className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                    id="import-file-input"
                   />
-                  <Button variant="secondary" size="sm">
+                  <Button variant="secondary" size="sm" as="label" htmlFor="import-file-input">
                     📥 Import
                   </Button>
-                </label>
+                </div>
               </div>
 
               {/* Project List */}
@@ -402,22 +575,22 @@ const WelcomePage: React.FC = () => {
                               Updated: {new Date(project.updatedAt).toLocaleDateString()}
                             </p>
                           </div>
-                          <div className="flex space-x-1">
+                          <div className="flex space-x-2">
                             <button
                               onClick={(e) => handleExportProject(project, e)}
-                              className="text-blue-500 hover:text-blue-700"
+                              className="text-blue-500 hover:text-blue-700 p-1 rounded hover:bg-blue-50"
                               title="Export project"
                             >
-                              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                               </svg>
                             </button>
                             <button
                               onClick={(e) => handleDeleteProject(project.id, e)}
-                              className="text-red-500 hover:text-red-700"
+                              className="text-red-500 hover:text-red-700 p-1 rounded hover:bg-red-50"
                               title="Delete project"
                             >
-                              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                               </svg>
                             </button>
