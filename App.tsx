@@ -3,7 +3,10 @@ import React, { useState, useMemo, useEffect } from 'react';
 import { Routes, Route, useLocation, useNavigate } from 'react-router-dom';
 import { UserInputs, DesignFactorOption } from './types';
 import { DESIGN_FACTORS, DESIGN_FACTOR_BASELINES } from './constants/cobitData';
+import { authService } from './services/supabase';
 import Sidebar from './components/Sidebar';
+import LoginPage from './pages/LoginPage';
+import DashboardPage from './pages/DashboardPage';
 import WelcomePage from './pages/WelcomePage';
 import InstructionPage from './pages/InstructionPage';
 import DesignFactorPage from './pages/DesignFactorPage';
@@ -16,6 +19,35 @@ import Button from './components/common/Button';
 
 function App() {
   const navigate = useNavigate();
+  const [user, setUser] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+  
+  // Check authentication on app start
+  useEffect(() => {
+    const checkAuth = async () => {
+      try {
+        const currentUser = await authService.getCurrentUser();
+        setUser(currentUser);
+        
+        // Listen to auth changes
+        const { data: { subscription } } = authService.onAuthStateChange((event, session) => {
+          setUser(session?.user || null);
+          if (event === 'SIGNED_OUT') {
+            navigate('/login');
+          }
+        });
+        
+        return () => subscription.unsubscribe();
+      } catch (error) {
+        console.error('Auth check failed:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    
+    checkAuth();
+  }, [navigate]);
+
   const [userInputs, setUserInputs] = useState<UserInputs>(() => {
     // Initialize inputs with default values from constants
     const initialInputs: UserInputs = {};
@@ -168,6 +200,23 @@ function App() {
     setShowConfirmDialog(true);
   };
 
+  // Show loading screen while checking authentication
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
+          <p className="mt-4 text-gray-600">Loading...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // If not authenticated, show login page
+  if (!user) {
+    return <LoginPage />;
+  }
+
   // If no current project, show welcome page
   if (!hasCurrentProject) {
     return <WelcomePage />;
@@ -195,6 +244,17 @@ function App() {
                 </span>
               )}
 
+              <div className="text-white text-sm mr-4">
+                Welcome, {user.user_metadata?.username || user.email}
+              </div>
+
+              <Button 
+                onClick={() => navigate('/dashboard')} 
+                variant="secondary"
+                className="bg-blue-500 hover:bg-blue-600 text-white rounded-full px-4 py-2 font-medium transition-colors duration-200"
+              >
+                Dashboard
+              </Button>
               <Button 
                 onClick={() => {
                   if (hasUnsavedChanges) {
@@ -261,24 +321,44 @@ function App() {
 
           <main className={`flex-1 p-6 sm:p-8 ${isSidebarVisible ? 'border-l border-gray-200' : ''}`}>
              <Routes>
-                <Route path="/" element={<InstructionPage />} />
+                {/* Auth Routes */}
+                <Route path="/login" element={<LoginPage />} />
+                <Route path="/dashboard" element={<DashboardPage />} />
+                
+                {/* App Routes - Only accessible when authenticated */}
+                <Route path="/" element={
+                  user ? <InstructionPage /> : <LoginPage />
+                } />
                 <Route 
                   path="/design-factor/:factorId" 
-                  element={<DesignFactorPage allInputs={userInputs} onInputChange={setUserInputs} />} 
+                  element={
+                    user ? <DesignFactorPage allInputs={userInputs} onInputChange={setUserInputs} /> : <LoginPage />
+                  } 
                 />
                 <Route 
                   path="/summary/step2" 
-                  element={<SummaryStep2Page allInputs={userInputs} />} 
+                  element={
+                    user ? <SummaryStep2Page allInputs={userInputs} /> : <LoginPage />
+                  } 
                 />
                 <Route 
                   path="/summary/step3" 
-                  element={<SummaryStep3Page allInputs={userInputs} />} 
+                  element={
+                    user ? <SummaryStep3Page allInputs={userInputs} /> : <LoginPage />
+                  } 
                 />
                 <Route 
                   path="/canvas" 
-                  element={<CanvasPage allInputs={userInputs} />} 
+                  element={
+                    user ? <CanvasPage allInputs={userInputs} /> : <LoginPage />
+                  } 
                 />
-
+                <Route 
+                  path="/welcome" 
+                  element={
+                    user ? <WelcomePage /> : <LoginPage />
+                  } 
+                />
               </Routes>
           </main>
         </div>
