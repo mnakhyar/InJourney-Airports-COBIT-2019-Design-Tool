@@ -102,10 +102,10 @@ const CanvasPage: React.FC<{ allInputs: UserInputs }> = ({ allInputs }) => {
 
 
     const handleWeightChange = (factorId: string, value: string) => {
-        const numericValue = value === '' ? 1 : parseFloat(value);
+        const numericValue = value === '' ? 0 : parseFloat(value);
         setFactorWeights(prev => ({
             ...prev,
-            [factorId]: isNaN(numericValue) ? 1 : numericValue,
+            [factorId]: isNaN(numericValue) ? 0 : numericValue,
         }));
     };
 
