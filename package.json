@@ -5,6 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite --base /",
+    "start": "vite --base /",
     "build": "vite build",
     "preview": "vite preview --base /InJourney-Airports-COBIT-2019-Design-Tool/"
   },

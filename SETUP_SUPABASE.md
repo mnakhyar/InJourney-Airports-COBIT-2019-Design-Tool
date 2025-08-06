@@ -70,8 +70,8 @@ CREATE POLICY "Users can only access their own projects" ON projects
 
 ## Step 6: Test the Application
 
-1. Run `npm start` to start the development server
-2. Go to `http://localhost:3000`
+1. Run `npm run dev` or `npm start` to start the development server
+2. Go to `http://localhost:5173` (Vite default port)
 3. You should be redirected to the login page
 4. Create an account and test the functionality
 
