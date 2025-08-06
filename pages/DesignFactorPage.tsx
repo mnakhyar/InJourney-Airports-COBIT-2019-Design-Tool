@@ -233,8 +233,8 @@ const DesignFactorPage: React.FC<DesignFactorPageProps> = ({ allInputs, onInputC
                             };
                             
                                                          return (
-                                 <div key={item.id} className="py-2 grid grid-cols-12 gap-4 items-center">
-                                     <div className="col-span-12 sm:col-span-6">
+                                 <div key={item.id} className="py-2 grid grid-cols-12 gap-2 items-center">
+                                     <div className="col-span-12 sm:col-span-8">
                                          <label htmlFor={`${factor.id}-${item.id}`} className="block text-sm font-medium text-gray-700">{item.name}</label>
                                          <Slider
                                              id={`${factor.id}-${item.id}`}
@@ -244,10 +244,10 @@ const DesignFactorPage: React.FC<DesignFactorPageProps> = ({ allInputs, onInputC
                                              onChange={newValue => handleInputChange(item.id, newValue)}
                                          />
                                      </div>
-                                     <div className="col-span-12 sm:col-span-3 flex justify-center items-center">
+                                     <div className="col-span-12 sm:col-span-2 flex justify-center items-center">
                                          {factor.id === 'df4' && getSymbol(currentValue)}
                                      </div>
-                                     <div className="col-span-12 sm:col-span-3 text-center sm:border-l sm:pl-4 mt-2 sm:mt-0">
+                                     <div className="col-span-12 sm:col-span-2 text-center sm:border-l sm:pl-2 mt-2 sm:mt-0">
                                          {baseline !== undefined && (
                                              <>
                                                  <span className="text-xs text-gray-500 uppercase">Baseline</span>
