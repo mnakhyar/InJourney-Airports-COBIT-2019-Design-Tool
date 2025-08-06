@@ -341,19 +341,31 @@ const CanvasPage: React.FC<{ allInputs: UserInputs }> = ({ allInputs }) => {
                                             <td className="p-1 whitespace-nowrap bg-yellow-50 border-r border-gray-300"><input type="text" value={canvasInputs[row.id]?.capabilityReason ?? ''} onChange={e => handleInputChange(row.id, 'capabilityReason', e.target.value)} className="w-full p-1 border rounded" /></td>
                                             
                                             {/* Step 5 inputs */}
-                                            {step5Cols.map(col => (
-                                                <td key={`${row.id}-${col.id}`} className="p-1 whitespace-nowrap bg-purple-50 border-r border-gray-200">
-                                                    <input 
-                                                        type="number" 
-                                                        min={col.min} max={col.max}
-                                                        value={(canvasInputs[row.id]?.[col.id] as number) ?? ''} 
-                                                        onChange={e => handleInputChange(row.id, col.id, e.target.value)} 
-                                                        className="w-full p-1 border rounded text-center"
-                                                        placeholder="-"
-                                                        step="1"
-                                                    />
-                                                </td>
-                                            ))}
+                                            {step5Cols.map(col => {
+                                                // For "Agreed 5yr" and "2029", use the same value as "Agreed Capability"
+                                                let displayValue = (canvasInputs[row.id]?.[col.id] as number) ?? '';
+                                                let isReadOnly = false;
+                                                
+                                                if (col.id === 'agreedFor5Years' || col.id === 'yearlyScore_5') {
+                                                    displayValue = agreedCapabilityValue;
+                                                    isReadOnly = true;
+                                                }
+                                                
+                                                return (
+                                                    <td key={`${row.id}-${col.id}`} className="p-1 whitespace-nowrap bg-purple-50 border-r border-gray-200">
+                                                        <input 
+                                                            type="number" 
+                                                            min={col.min} max={col.max}
+                                                            value={displayValue} 
+                                                            onChange={e => handleInputChange(row.id, col.id, e.target.value)} 
+                                                            className={`w-full p-1 border rounded text-center ${isReadOnly ? 'bg-gray-100 cursor-not-allowed' : ''}`}
+                                                            placeholder="-"
+                                                            step="1"
+                                                            readOnly={isReadOnly}
+                                                        />
+                                                    </td>
+                                                );
+                                            })}
                                         </tr>
                                     );
                                 })}
